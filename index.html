@@ -1,4 +1,8 @@
-<meta name="claude:viewport-fit-sides" content="cover">
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>DGaji Dahana</title>
 <meta name="theme-color" content="#d81f2a">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -7,14 +11,17 @@
 <meta name="apple-mobile-web-app-title" content="DGaji">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" href="icon-192.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=8">
+</head>
+<body>
 
 <!-- ================= ONBOARDING ================= -->
 <div id="onboard" hidden>
   <div class="ob-scroll">
     <div class="ob-card">
-      <div class="app-logo"><img id="obLogo" alt="DGaji"></div>
+      <div class="app-logo"><img src="logo.png" alt="Dahana"></div>
       <h1>D<span class="accent">Gaji</span></h1>
       <p>Atur komponen gaji sekali di sini. Nanti tersimpan otomatis — ubah kapan saja lewat ⚙️ Pengaturan.</p>
       <div class="set-grid">
@@ -29,7 +36,7 @@
         <div><label for="ob_tLembur">T. Lembur <span class="hint">— per 1 jam jaman</span></label><div class="cur"><input id="ob_tLembur" class="rp" type="text" inputmode="numeric" placeholder="0"></div></div>
         <div><label for="ob_uangMakan">Uang Makan <span class="hint">— dihitung terpisah</span></label><div class="cur"><input id="ob_uangMakan" class="rp" type="text" inputmode="numeric" placeholder="0"></div></div>
       </div>
-      <button class="btn btn-red" id="obStart">Simpan & Mulai →</button>
+      <button class="btn btn-red" id="obStart">Simpan &amp; Mulai →</button>
     </div>
   </div>
 </div>
@@ -38,7 +45,7 @@
 <div id="app" class="shell" hidden>
 
   <header class="appbar">
-    <div class="app-logo sm"><img id="appLogo" alt="DGaji"></div>
+    <div class="app-logo sm"><img src="logo.png" alt="Dahana"></div>
     <div class="appbar-txt">
       <div class="hi" id="greet">Hai!</div>
       <div class="role">DGaji · Dahana</div>
@@ -51,7 +58,7 @@
 
     <!-- ===== TAB: HITUNG ===== -->
     <section class="screen" id="tab-hitung">
-      <div class="card">
+      <div class="card card-input">
         <p class="card-h">Input Harian</p>
         <label class="check off-check">
           <input id="off" type="checkbox">
@@ -124,12 +131,12 @@
     <section class="screen" id="tab-riwayat" hidden>
       <div class="card">
         <p class="card-h">Riwayat Periode</p>
-        <div class="period-sel" style="margin-bottom:14px">
-          <select id="periodSel2"></select>
-        </div>
-        <div class="dl-row">
-          <button class="btn btn-red" id="dlBtn">⬇ Excel</button>
-          <button class="btn btn-dark" id="copyBtn">⧉ Salin</button>
+        <div class="riwayat-top">
+          <select id="periodSel2" aria-label="Pilih periode"></select>
+          <div class="dl-row">
+            <button class="btn btn-red" id="dlBtn">⬇ Excel</button>
+            <button class="btn btn-dark" id="copyBtn">⧉ Salin</button>
+          </div>
         </div>
         <div id="recList"></div>
       </div>
@@ -137,7 +144,7 @@
 
   </main>
 
-  <!-- ===== BOTTOM TAB BAR ===== -->
+  <!-- ===== NAVIGASI (bawah di HP, samping di laptop) ===== -->
   <nav class="tabbar">
     <button class="tab on" data-tab="hitung">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2.5"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="11" x2="8.01" y2="11"/><line x1="12" y1="11" x2="12.01" y2="11"/><line x1="16" y1="11" x2="16.01" y2="11"/><line x1="8" y1="15" x2="8.01" y2="15"/><line x1="12" y1="15" x2="12.01" y2="15"/><line x1="16" y1="15" x2="16" y2="18"/></svg>
@@ -182,8 +189,6 @@
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script>
-  document.getElementById('obLogo').src='logo.png';
-  document.getElementById('appLogo').src='logo.png';
-</script>
-<script src="app.js"></script>
+<script src="app.js?v=8"></script>
+</body>
+</html>

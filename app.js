@@ -270,9 +270,21 @@ function applyGreet(){var s=getSet()||{};$('greet').textContent='Hai, '+(s.nama|
 function showApp(){applyGreet();$('onboard').hidden=true;$('app').hidden=false;}
 
 /* ========== PWA ========== */
-function registerSW(){if('serviceWorker' in navigator){try{
-  window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});
-}catch(e){}}}
+function registerSW(){
+  if(!('serviceWorker' in navigator))return;
+  try{
+    var reloaded=false, hadController=!!navigator.serviceWorker.controller;
+    // saat service worker baru menggantikan yang lama, muat ulang sekali supaya versi baru langsung tampil
+    navigator.serviceWorker.addEventListener('controllerchange',function(){
+      if(reloaded||!hadController)return;reloaded=true;window.location.reload();
+    });
+    window.addEventListener('load',function(){
+      navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(function(reg){
+        reg.update().catch(function(){});
+      }).catch(function(){});
+    });
+  }catch(e){}
+}
 
 var deferredPrompt=null, installedFlag=false;
 function isStandalone(){try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;}catch(e){return false;}}

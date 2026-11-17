@@ -32,6 +32,7 @@
 }
 
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html,body{height:100%;margin:0}
 body{background:var(--bg);color:var(--fg);font-family:var(--fb);line-height:1.5;
   -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;
@@ -73,13 +74,12 @@ body{background:var(--bg);color:var(--fg);font-family:var(--fb);line-height:1.5;
 /* ========================================================
    APP SHELL
    ======================================================== */
-.shell{position:fixed;inset:0;max-width:540px;margin-inline:auto;display:flex;flex-direction:column;
+.shell{position:fixed;inset:0;display:flex;flex-direction:column;
   overflow:hidden;
   background:
     radial-gradient(78% 42% at 88% 0%,var(--glow),transparent 62%),
     radial-gradient(62% 40% at -8% 6%,rgba(138,5,18,.20),transparent 55%),
     var(--bg)}
-@media (min-width:600px){.shell{border-inline:1px solid var(--line)}}
 
 /* appbar */
 .appbar{flex:0 0 auto;display:flex;align-items:center;gap:11px;
@@ -100,7 +100,7 @@ body{background:var(--bg);color:var(--fg);font-family:var(--fb);line-height:1.5;
 .screens{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
   display:flex;flex-direction:column;
   padding:18px max(16px,env(safe-area-inset-left)) 22px max(16px,env(safe-area-inset-right))}
-.screen{margin-block:auto;width:100%}            /* konten seimbang di tengah saat pendek, scroll saat panjang */
+.screen{margin:auto;width:100%;max-width:640px}            /* konten seimbang di tengah saat pendek, scroll saat panjang */
 .screen>*{margin-bottom:16px;animation:rise .5s cubic-bezier(.2,.7,.2,1) both}
 .screen>*:last-child{margin-bottom:0}
 .screen>*:nth-child(1){animation-delay:.04s}
@@ -295,3 +295,56 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 #installRow .btn{width:100%}
 .install-state{font-size:.82rem;color:var(--muted);text-align:center;padding:11px;font-weight:600;
   background:var(--surface-2);border:1px solid var(--line);border-radius:12px}
+
+/* ========================================================
+   RIWAYAT TOP (HP: bertumpuk)
+   ======================================================== */
+.riwayat-top{display:flex;flex-direction:column;gap:12px;margin-bottom:16px}
+.riwayat-top .dl-row{margin-bottom:0}
+
+/* ========================================================
+   LAPTOP / LAYAR LEBAR — persegi panjang penuh
+   menu di kiri, konten berkolom
+   ======================================================== */
+@media (min-width:900px){
+  .shell{display:grid;grid-template-columns:232px 1fr;grid-template-rows:auto 1fr}
+  .appbar{grid-column:1 / -1;padding:14px 28px}
+  .appbar .hi{font-size:1.15rem}
+
+  .tabbar{grid-column:1;grid-row:2;display:flex;flex-direction:column;gap:6px;
+    border-top:none;border-right:1px solid var(--line);padding:22px 14px}
+  .tab{flex-direction:row;justify-content:flex-start;gap:13px;padding:13px 16px;border-radius:12px;
+    transition:background .2s,color .2s,transform .15s}
+  .tab span{font-size:.95rem;font-weight:600}
+  .tab:hover{background:var(--surface-2);color:var(--fg)}
+  .tab.on{background:var(--red-soft);color:var(--red-bright)}
+  .tab.on svg{transform:none}
+
+  .screens{grid-column:2;grid-row:2;padding:30px 40px}
+  .screen{max-width:1180px;margin:0 auto auto}
+  .screen>*{margin-bottom:0}
+
+  /* Hitung: input kiri, hasil + simpan kanan */
+  #tab-hitung{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);grid-template-rows:auto 1fr;gap:22px;align-items:start}
+  #tab-hitung>.card-input{grid-row:1 / span 2}
+  #tab-hitung>.result{grid-column:2}
+  #tab-hitung>#saveBtn{grid-column:2;align-self:start}
+  .result .big{font-size:4rem}
+
+  /* Gaji: ringkasan kiri, rincian kanan */
+  #tab-gaji{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;align-items:start}
+  .gaji-big{font-size:3rem}
+
+  /* Riwayat: kontrol sejajar, catatan grid */
+  .riwayat-top{flex-direction:row;align-items:center}
+  .riwayat-top select{flex:1}
+  .riwayat-top .dl-row{flex:0 0 auto}
+  .riwayat-top .dl-row .btn{padding:13px 22px}
+  #recList{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+  #recList .rec{margin-bottom:0}
+  #recList .empty{grid-column:1 / -1}
+}
+@media (min-width:1400px){
+  .shell{grid-template-columns:260px 1fr}
+  .screens{padding:36px 56px}
+}
