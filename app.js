@@ -86,12 +86,12 @@ function renderResult(){
   lastTotal=r.total;
   var h='<div class="brow"><span>Dasar — '+r.kalc+'</span><span>'+jamTxt(r.base)+'</span></div>';
   if(r.lembur>0)h+='<div class="brow"><span>Lembur (pulang → '+fmt(r.bulat)+')</span><span>+'+jamTxt(r.lembur)+'</span></div>';
-  if(r.ambil>0)h+='<div class="brow"><span>Pengambilan bahan peledak</span><span>+1 jam</span></div>';
+  if(r.ambil>0)h+='<div class="brow"><span>Ikut Pengambilan</span><span>+1 jam</span></div>';
   h+='<div class="brow tot"><span>Total Jam Jaman</span><span>'+jamTxt(r.total)+'</span></div>';
   if(r.forced)h+='<div class="note">⚠️ <span>Pulang lewat jam 5 otomatis dihitung <b>di atas 50 Ton</b>.</span></div>';
   bd.innerHTML=h;}
 
-/* ========== PERIODE ========== */
+/* ========== PERIODE (gaji 21–20) ========== */
 var curPeriod=null, lastGaji=0;
 function reduced(){try{return matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){return false;}}
 function countUp(el,to,render){
@@ -100,75 +100,154 @@ function countUp(el,to,render){
   function step(ts){if(start===null)start=ts;var p=Math.min((ts-start)/dur,1);var e=1-Math.pow(1-p,3);
     el.textContent=render(to*e);if(p<1)requestAnimationFrame(step);else el.textContent=render(to);}
   requestAnimationFrame(step);}
-function todayKey(){return periodKey($('tanggal').value||new Date().toISOString().slice(0,10));}
-function allPeriods(){var keys={};getRecs().forEach(function(r){keys[periodKey(r.tanggal)]=1;});keys[todayKey()]=1;
-  return Object.keys(keys).sort().reverse();}
-function fillSelect(sel,arr){sel.innerHTML=arr.map(function(k){return '<option value="'+k+'">'+periodLabel(k)+'</option>';}).join('');}
-function renderPeriods(){var arr=allPeriods();if(!curPeriod||arr.indexOf(curPeriod)<0)curPeriod=todayKey();
-  fillSelect($('periodSel'),arr);fillSelect($('periodSel2'),arr);
-  $('periodSel').value=curPeriod;$('periodSel2').value=curPeriod;}
+function todayStr(){var t=new Date();t.setMinutes(t.getMinutes()-t.getTimezoneOffset());return t.toISOString().slice(0,10);}
+function shiftPeriod(k,n){var p=k.split('-'),y=+p[0],m=+p[1]-1+n;while(m<0){m+=12;y--;}while(m>11){m-=12;y++;}
+  return y+'-'+String(m+1).padStart(2,'0');}
 function periodRecs(k){return getRecs().filter(function(r){return periodKey(r.tanggal)===k;});}
+function calcPeriod(k){
+  var recs=periodRecs(k),totJam=0,hari=0;recs.forEach(function(r){totJam+=r.total||0;if(!r.off)hari++;});
+  var s=getSet()||{},lembur=totJam*(s.tLembur||0);
+  return {recs:recs,totJam:totJam,hari:hari,s:s,lembur:lembur,total:(s.gajiPokok||0)+(s.tHadir||0)+(s.tBerkala||0)+lembur};}
 
 function renderGaji(){
-  $('periodNote').textContent=periodNote(curPeriod);
-  var recs=periodRecs(curPeriod),totJam=0,hariKerja=0;
-  recs.forEach(function(r){totJam+=r.total||0;if(!r.off)hariKerja++;});
-  $('sumJam').textContent=jamNum(totJam);$('sumHari').textContent=hariKerja;
-  var s=getSet()||{};var lembur=totJam*(s.tLembur||0);
-  var totalGaji=(s.gajiPokok||0)+(s.tHadir||0)+(s.tBerkala||0)+lembur;
-  lastGaji=totalGaji;
-  $('gajiBig').textContent=rupiah(totalGaji);
+  $('perLabel').textContent=periodLabel(curPeriod);$('periodNote').textContent=periodNote(curPeriod);
+  var c=calcPeriod(curPeriod),s=c.s;lastGaji=c.total;
+  $('sumJam').textContent=jamNum(c.totJam);$('sumHari').textContent=c.hari;
+  $('gajiBig').textContent=rupiah(c.total);
   $('gajiBreak').innerHTML=
     '<div class="money-row"><span class="k">Gaji Pokok</span><span class="v">'+rupiah(s.gajiPokok)+'</span></div>'+
     '<div class="money-row"><span class="k">T. Hadir</span><span class="v">'+rupiah(s.tHadir)+'</span></div>'+
     '<div class="money-row"><span class="k">T. Berkala</span><span class="v">'+rupiah(s.tBerkala)+'</span></div>'+
-    '<div class="money-row"><span class="k">Uang Lembur<small>'+jamNum(totJam)+' jam × '+rupiah(s.tLembur)+'</small></span><span class="v">'+rupiah(lembur)+'</span></div>'+
-    '<div class="money-row tot"><span class="k">Total Gaji</span><span class="v">'+rupiah(totalGaji)+'</span></div>';
+    '<div class="money-row"><span class="k">Uang Lembur<small>'+jamNum(c.totJam)+' jam × '+rupiah(s.tLembur)+'</small></span><span class="v">'+rupiah(c.lembur)+'</span></div>'+
+    '<div class="money-row tot"><span class="k">Total Gaji</span><span class="v">'+rupiah(c.total)+'</span></div>';
   $('makanAmt').textContent=rupiah(s.uangMakan);}
 
-function renderRecs(){
-  var list=$('recList'),recs=periodRecs(curPeriod).sort(function(a,b){return (b.tanggal||'').localeCompare(a.tanggal||'')});
-  if(!recs.length){list.innerHTML='<div class="empty">Belum ada catatan di periode ini.<br>Buka tab <b>Hitung</b> lalu Simpan.</div>';return;}
-  list.innerHTML=recs.map(function(r,idx){
-    var dt=new Date(r.tanggal+'T00:00:00');
-    var dStr=dt.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-    var cap=r.type?r.type.charAt(0).toUpperCase()+r.type.slice(1):'';
-    var jamHtml=r.off?'<span class="rec-jam libur">Libur</span>':'<span class="rec-jam">'+jamTxt(r.total)+'</span>';
-    var tags=r.off?'<span class="chip off">OFF / Libur</span>'
-      :'<span class="chip day '+(r.type==='biasa'?'':r.type)+'">'+(r.type==='biasa'?'Hari Biasa':cap)+'</span>'+
-       '<span class="chip">DTH '+(r.atas50?'> 50':'≤ 50')+' Ton</span>'+
-       '<span class="chip">Pulang '+fmt(r.jamPulang)+'</span>'+
-       (r.pengambilan?'<span class="chip amb">+ Pengambilan</span>':'');
-    return '<div class="rec" style="animation-delay:'+(idx*0.03)+'s">'+
-      '<div class="rec-top"><span class="rec-date">'+dStr+'</span>'+jamHtml+'</div>'+
-      '<div class="rec-tags">'+tags+'</div>'+
-      '<div class="rec-act"><button data-edit="'+r.id+'">✎ Edit</button><button class="del" data-del="'+r.id+'">🗑 Hapus</button></div></div>';
-  }).join('');}
+/* ========== DATA PER TANGGAL ========== */
+function recByDate(d){var r=getRecs().filter(function(x){return x.tanggal===d;});return r.length?r[r.length-1]:null;}
+function dedupe(){ // satu tanggal satu data (simpan yang terakhir diinput)
+  var recs=getRecs(),seen={},out=[];
+  for(var i=recs.length-1;i>=0;i--){if(!seen[recs[i].tanggal]){seen[recs[i].tanggal]=1;out.unshift(recs[i]);}}
+  if(out.length!==recs.length)setRecs(out);}
+function capType(t){return t==='biasa'?'Hari Biasa':t==='sabtu'?'Sabtu':'Minggu';}
+function tglPanjang(d){return new Date(d+'T00:00:00').toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});}
+function recBreakdown(r){
+  if(r.off)return '<div class="drow"><span>Status</span><b>OFF / Libur</b></div><div class="drow tot"><span>Total hari ini</span><b>0 jam</b></div>';
+  var h=hitung({type:r.type,atas50:r.atas50,jamPulang:r.jamPulang,pengambilan:r.pengambilan});
+  var x='<div class="drow"><span>Jenis hari</span><b>'+capType(r.type)+'</b></div>'+
+    '<div class="drow"><span>Tonase (DTH)</span><b>'+(r.atas50?'Di atas 50 Ton':'Di bawah 50 Ton')+'</b></div>'+
+    '<div class="drow"><span>Jam pulang</span><b>'+fmt(r.jamPulang)+(h.lewat?' → '+fmt(h.bulat):'')+'</b></div>'+
+    '<div class="drow"><span>Ikut Pengambilan</span><b>'+(r.pengambilan?'Ya':'Tidak')+'</b></div>'+
+    '<div class="dsep"></div>'+
+    '<div class="drow"><span>Jam dasar</span><b>'+jamTxt(h.base)+'</b></div>';
+  if(h.lembur>0)x+='<div class="drow"><span>Lembur</span><b>+'+jamTxt(h.lembur)+'</b></div>';
+  if(h.ambil>0)x+='<div class="drow"><span>Pengambilan</span><b>+1 jam</b></div>';
+  var s=getSet()||{};
+  x+='<div class="drow tot"><span>Total jam jaman</span><b>'+jamTxt(r.total)+'</b></div>'+
+     '<div class="drow muted"><span>Nilai lembur hari ini</span><b>'+rupiah(r.total*(s.tLembur||0))+'</b></div>';
+  return x;}
 
-function refreshAll(){renderPeriods();renderGaji();renderRecs();}
+/* ========== HITUNG: 1 tanggal = 1 input ========== */
+var editingId=null;
+function setForm(r){
+  $('off').checked=!!r.off;
+  var on=!!r.atas50,seg=$('segDth');
+  seg.querySelectorAll('button').forEach(function(b){b.classList.toggle('on',(b.dataset.v==='atas')===on)});
+  seg.classList.toggle('pos1',on);
+  $('pulang').value=r.jamPulang!=null?fmt(r.jamPulang):'17:00';$('pengambilan').checked=!!r.pengambilan;}
+function resetForm(){setForm({off:false,atas50:false,jamPulang:CUT,pengambilan:false});}
+function renderHitungState(){
+  var d=$('tanggal').value,r=d?recByDate(d):null;
+  var done=!!r&&(!editingId||editingId!==r.id);
+  if(editingId&&r&&r.id!==editingId)done=true; // pindah ke tanggal lain yang sudah terisi
+  $('tab-hitung').classList.toggle('is-done',done);$('formArea').hidden=done;$('result').hidden=done;$('saveRow').hidden=done;$('doneCard').hidden=!done;
+  $('hitungTitle').textContent=editingId&&!done?'Ubah Data':'Input Harian';
+  $('saveBtn').textContent=editingId?'💾 Simpan Perubahan':'＋ Simpan ke Catatan';
+  $('cancelEdit').hidden=!editingId;
+  if(done){
+    $('doneSum').innerHTML='<div class="done-big">'+(r.off?'OFF':jamNum(r.total)+'<small> jam</small>')+'</div>'+
+      '<div class="done-chips">'+(r.off?'<span class="chip off">Libur</span>':
+        '<span class="chip">'+capType(r.type)+'</span><span class="chip">DTH '+(r.atas50?'> 50':'≤ 50')+'</span><span class="chip">Pulang '+fmt(r.jamPulang)+'</span>'+
+        (r.pengambilan?'<span class="chip amb">+ Pengambilan</span>':''))+'</div>';
+  }else renderResult();}
+function startEdit(r){
+  editingId=r.id;$('tanggal').value=r.tanggal;setForm(r);
+  renderHari();renderEcho();renderHitungState();showTab('hitung');toast('Ubah data lalu simpan');}
+function stopEdit(){editingId=null;resetForm();renderHari();renderEcho();renderHitungState();}
 
-/* ========== EXPORT EXCEL ========== */
+/* ========== RIWAYAT: KALENDER ========== */
+var calY,calM,selDate,delArm=null;
+function pad(n){return String(n).padStart(2,'0');}
+function ds(y,m,d){return y+'-'+pad(m+1)+'-'+pad(d);}
+function renderCal(){
+  $('calLabel').textContent=BULAN[calM]+' '+calY;
+  var first=new Date(calY,calM,1),days=new Date(calY,calM+1,0).getDate(),off=(first.getDay()+6)%7;
+  var map={};getRecs().forEach(function(r){map[r.tanggal]=r;});
+  var today=todayStr(),html='',tot=0,kerja=0;
+  for(var i=0;i<off;i++)html+='<span class="cd empty"></span>';
+  for(var d=1;d<=days;d++){
+    var k=ds(calY,calM,d),r=map[k],g=new Date(calY,calM,d).getDay();
+    var cls='cd'+(k===today?' today':'')+(k===selDate?' sel':'')+(g===0?' mg':'')+(r?(r.off?' has off':' has'):'');
+    if(r&&!r.off){tot+=r.total;kerja++;}
+    html+='<button class="'+cls+'" data-d="'+k+'"><span class="n">'+d+'</span>'+
+      (r?'<span class="mk">'+(r.off?'OFF':jamNum(r.total))+'</span>':'')+'</button>';}
+  var g=$('calGrid');g.innerHTML=html;g.classList.remove('slide');void g.offsetWidth;g.classList.add('slide');
+  $('calSum').textContent=kerja+' hari kerja · '+jamNum(tot)+' jam';
+  var pk=ds(calY,calM,15).slice(0,7);
+  $('exportNote').innerHTML='Periode gaji <b>'+periodLabel(pk)+'</b> · '+periodNote(pk);
+  renderDay();}
+function renderDay(){
+  var c=$('dayCard'),r=recByDate(selDate);delArm=null;
+  var head='<div class="day-head"><div><div class="day-date">'+tglPanjang(selDate)+'</div>'+
+    '<div class="day-sub">'+(r?(r.off?'Libur':'Sudah diinput'):'Belum ada data')+'</div></div>'+
+    (r?'<div class="day-total'+(r.off?' off':'')+'">'+(r.off?'OFF':jamNum(r.total)+'<small> jam</small>')+'</div>':'')+'</div>';
+  if(!r){c.innerHTML=head+'<div class="day-empty">Tidak ada catatan di tanggal ini.</div>'+
+    '<button class="btn btn-red" id="dayAdd">＋ Input tanggal ini</button>';}
+  else c.innerHTML=head+'<div class="day-body">'+recBreakdown(r)+'</div>'+
+    '<div class="rec-act"><button id="dayEdit">✎ Edit</button><button class="del" id="dayDel">🗑 Hapus</button></div>';
+  c.classList.remove('pop-in');void c.offsetWidth;c.classList.add('pop-in');}
+function moveCal(n){calM+=n;if(calM<0){calM=11;calY--;}if(calM>11){calM=0;calY++;}
+  var today=todayStr();
+  selDate=(today.slice(0,7)===ds(calY,calM,1).slice(0,7))?today:ds(calY,calM,1);renderCal();}
+
+function refreshAll(){renderGaji();renderCal();renderHitungState();}
+
+/* ========== EXPORT ========== */
 function safeName(s){return (s||'karyawan').replace(/[^\w\-]+/g,'_').replace(/^_+|_+$/g,'')||'karyawan';}
+function exportKey(){return ds(calY,calM,15).slice(0,7);}
 function downloadExcel(){
+  var k=exportKey();
   if(typeof XLSX==='undefined'){toast('Library Excel belum siap');return;}
-  var recs=periodRecs(curPeriod);if(!recs.length){toast('Tidak ada data di periode ini');return;}
-  recs.sort(function(a,b){return (a.tanggal||'').localeCompare(b.tanggal||'')});
-  var s=getSet()||{},nama=s.nama||'-',totJam=0;recs.forEach(function(r){totJam+=r.total||0;});
-  var lembur=totJam*(s.tLembur||0),totalGaji=(s.gajiPokok||0)+(s.tHadir||0)+(s.tBerkala||0)+lembur;
-  var aoa=[['DGAJI — DAHANA'],['Nama',nama],['Periode',periodLabel(curPeriod)+'  ('+periodNote(curPeriod)+')'],[],
+  var c=calcPeriod(k),recs=c.recs.slice().sort(function(a,b){return a.tanggal.localeCompare(b.tanggal)});
+  if(!recs.length){toast('Tidak ada data di periode ini');return;}
+  var s=c.s,nama=s.nama||'-';
+  var aoa=[['DGAJI — DAHANA'],['Nama',nama],['Periode',periodLabel(k)+'  ('+periodNote(k)+')'],[],
     ['Tanggal','Hari','Status','DTH','Jam Pulang','Pengambilan','Jam Jaman']];
   recs.forEach(function(r){var hr=HARI[new Date(r.tanggal+'T00:00:00').getDay()];
     if(r.off)aoa.push([r.tanggal,hr,'OFF / Libur','','','',0]);
     else aoa.push([r.tanggal,hr,'Kerja',(r.atas50?'> 50 Ton':'≤ 50 Ton'),fmt(r.jamPulang),(r.pengambilan?'Ya':'-'),r.total]);});
-  aoa.push([],['','','','','','TOTAL JAM JAMAN',Math.round(totJam*100)/100],[],
+  aoa.push([],['','','','','','TOTAL JAM JAMAN',Math.round(c.totJam*100)/100],[],
     ['RINCIAN GAJI'],['Gaji Pokok',s.gajiPokok||0],['T. Hadir',s.tHadir||0],['T. Berkala',s.tBerkala||0],
-    ['Uang Lembur ('+jamNum(totJam)+' jam x '+(s.tLembur||0)+')',Math.round(lembur)],['TOTAL GAJI',Math.round(totalGaji)],
-    [],['Uang Makan (dipisah)',s.uangMakan||0]);
+    ['Uang Lembur ('+jamNum(c.totJam)+' jam x '+(s.tLembur||0)+')',Math.round(c.lembur)],['TOTAL GAJI',Math.round(c.total)],
+    [],['Uang Makan',s.uangMakan||0]);
   var ws=XLSX.utils.aoa_to_sheet(aoa);ws['!cols']=[{wch:24},{wch:10},{wch:12},{wch:10},{wch:11},{wch:12},{wch:11}];
   ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:6}}];
   var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'DGaji');
-  try{XLSX.writeFile(wb,'DGaji_'+safeName(nama)+'_'+curPeriod+'.xlsx');toast('Mengunduh Excel ✓');}
+  try{XLSX.writeFile(wb,'DGaji_'+safeName(nama)+'_'+k+'.xlsx');toast('Mengunduh Excel ✓');}
   catch(e){toast('Unduhan diblokir di preview — jalan saat di hosting');}}
+function copyRekap(){
+  var k=exportKey(),c=calcPeriod(k),recs=c.recs.slice().sort(function(a,b){return a.tanggal.localeCompare(b.tanggal)});
+  if(!recs.length){toast('Tidak ada data');return;}
+  var s=c.s,L=['DGAJI — '+(s.nama||'-'),'Periode: '+periodLabel(k)+' ('+periodNote(k)+')',''];
+  recs.forEach(function(r){var hr=HARI[new Date(r.tanggal+'T00:00:00').getDay()];
+    if(r.off)L.push(r.tanggal+' ('+hr+') | OFF/Libur');
+    else L.push(r.tanggal+' ('+hr+') | DTH '+(r.atas50?'>50':'≤50')+' | pulang '+fmt(r.jamPulang)+(r.pengambilan?' | +Pengambilan':'')+' = '+jamTxt(r.total));});
+  L.push('','Total Jam Jaman: '+jamTxt(c.totJam),'','Gaji Pokok: '+rupiah(s.gajiPokok),'T. Hadir: '+rupiah(s.tHadir),
+    'T. Berkala: '+rupiah(s.tBerkala),'Uang Lembur: '+rupiah(c.lembur),'TOTAL GAJI: '+rupiah(c.total),'','Uang Makan: '+rupiah(s.uangMakan));
+  var txt=L.join('\n');
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(function(){toast('Rekap disalin ✓')},function(){fb(txt)});
+  else fb(txt);
+  function fb(t){var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');toast('Rekap disalin ✓')}catch(e){toast('Gagal menyalin')}document.body.removeChild(ta);}}
 
 /* ========== TOAST & RIPPLE ========== */
 function toast(m){var t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show')},2000);}
@@ -192,7 +271,7 @@ function showTab(name){
   document.querySelectorAll('.tab').forEach(function(b){b.classList.toggle('on',b.dataset.tab===name);});
   $('screens').scrollTop=0;
   if(name==='gaji'){renderGaji();countUp($('gajiBig'),lastGaji,function(v){return rupiah(v);});}
-  if(name==='riwayat')renderRecs();}
+  if(name==='riwayat')renderCal();}
 
 /* ========== EVENTS ========== */
 function bind(){
@@ -200,7 +279,7 @@ function bind(){
   $('segDth').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;
     this.querySelectorAll('button').forEach(function(x){x.classList.remove('on')});b.classList.add('on');
     this.classList.toggle('pos1',b.dataset.v==='atas');renderResult();});
-  $('tanggal').addEventListener('change',function(){renderHari();renderResult();});
+  $('tanggal').addEventListener('change',function(){renderHari();renderHitungState();});
   var pul=$('pulang');
   pul.addEventListener('input',function(){var at=this.selectionStart>=this.value.length;this.value=maskTime(this.value);
     if(at)this.setSelectionRange(this.value.length,this.value.length);renderEcho();renderResult();});
@@ -208,45 +287,49 @@ function bind(){
   $('pengambilan').addEventListener('change',renderResult);
 
   $('saveBtn').addEventListener('click',function(){
-    if(!$('tanggal').value){toast('Isi tanggal dulu');return;}
-    var off=isOff(),rec={id:Date.now()+''+Math.floor(Math.random()*999),tanggal:$('tanggal').value,off:off};
-    if(off){rec.type=dayType($('tanggal').value);rec.total=0;}
+    var d=$('tanggal').value;if(!d){toast('Isi tanggal dulu');return;}
+    var ada=recByDate(d);
+    if(ada&&ada.id!==editingId){toast('Tanggal ini sudah ada datanya');renderHitungState();return;}
+    var off=isOff(),rec={id:editingId||(Date.now()+''+Math.floor(Math.random()*999)),tanggal:d,off:off};
+    if(off){rec.type=dayType(d);rec.total=0;}
     else{var i=curInput();if(i.jamPulang==null){toast('Jam pulang belum benar');return;}
       var r=hitung(i);rec.type=i.type;rec.atas50=r.atas50;rec.jamPulang=i.jamPulang;rec.pengambilan=i.pengambilan;rec.total=r.total;}
-    var recs=getRecs();recs.push(rec);setRecs(recs);
-    curPeriod=periodKey(rec.tanggal);refreshAll();
-    toast(off?'Hari OFF tersimpan':'Tersimpan ✓ '+jamTxt(rec.total));});
+    var wasEdit=!!editingId;
+    var recs=getRecs().filter(function(x){return x.id!==rec.id;});recs.push(rec);setRecs(recs);
+    editingId=null;curPeriod=periodKey(d);selDate=d;var dt=new Date(d+'T00:00:00');calY=dt.getFullYear();calM=dt.getMonth();
+    refreshAll();toast(wasEdit?'Perubahan disimpan ✓':(off?'Hari OFF tersimpan ✓':'Tersimpan ✓ '+jamTxt(rec.total)));});
+  $('cancelEdit').addEventListener('click',stopEdit);
+  $('doneEdit').addEventListener('click',function(){var r=recByDate($('tanggal').value);if(r)startEdit(r);});
+  $('doneSee').addEventListener('click',function(){var d=$('tanggal').value,dt=new Date(d+'T00:00:00');
+    selDate=d;calY=dt.getFullYear();calM=dt.getMonth();showTab('riwayat');});
 
-  $('recList').addEventListener('click',function(e){
-    var del=e.target.getAttribute('data-del'),ed=e.target.getAttribute('data-edit');
-    if(del){setRecs(getRecs().filter(function(r){return r.id!==del}));refreshAll();toast('Dihapus');}
-    if(ed){var r=getRecs().filter(function(x){return x.id===ed})[0];if(!r)return;
-      $('tanggal').value=r.tanggal;$('off').checked=!!r.off;
-      if(!r.off){var seg=$('segDth');seg.querySelectorAll('button').forEach(function(b){b.classList.toggle('on',(b.dataset.v==='atas')===!!r.atas50)});
-        seg.classList.toggle('pos1',!!r.atas50);$('pulang').value=r.jamPulang!=null?fmt(r.jamPulang):'17:00';$('pengambilan').checked=!!r.pengambilan;}
-      setRecs(getRecs().filter(function(x){return x.id!==ed}));
-      renderHari();renderEcho();renderResult();refreshAll();showTab('hitung');toast('Dimuat untuk diedit — Simpan lagi');}});
+  // gaji: geser periode
+  $('perPrev').addEventListener('click',function(){curPeriod=shiftPeriod(curPeriod,-1);renderGaji();countUp($('gajiBig'),lastGaji,rupiah);});
+  $('perNext').addEventListener('click',function(){curPeriod=shiftPeriod(curPeriod,1);renderGaji();countUp($('gajiBig'),lastGaji,rupiah);});
 
-  $('periodSel').addEventListener('change',function(){curPeriod=this.value;$('periodSel2').value=curPeriod;renderGaji();renderRecs();});
-  $('periodSel2').addEventListener('change',function(){curPeriod=this.value;$('periodSel').value=curPeriod;renderGaji();renderRecs();});
+  // riwayat: kalender
+  $('calPrev').addEventListener('click',function(){moveCal(-1);});
+  $('calNext').addEventListener('click',function(){moveCal(1);});
+  $('calGrid').addEventListener('click',function(e){var b=e.target.closest('.cd[data-d]');if(!b)return;
+    selDate=b.dataset.d;document.querySelectorAll('.cd.sel').forEach(function(x){x.classList.remove('sel')});
+    b.classList.add('sel');renderDay();});
+  var sx=null,sy=null,card=document.querySelector('.cal-card');
+  card.addEventListener('touchstart',function(e){sx=e.touches[0].clientX;sy=e.touches[0].clientY;},{passive:true});
+  card.addEventListener('touchend',function(e){if(sx===null)return;var dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;
+    if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.5)moveCal(dx<0?1:-1);sx=null;},{passive:true});
+  $('dayCard').addEventListener('click',function(e){
+    var t=e.target.closest('button');if(!t)return;
+    if(t.id==='dayAdd'){$('tanggal').value=selDate;editingId=null;resetForm();renderHari();renderEcho();renderHitungState();showTab('hitung');}
+    if(t.id==='dayEdit'){var r=recByDate(selDate);if(r)startEdit(r);}
+    if(t.id==='dayDel'){
+      if(delArm!==selDate){delArm=selDate;t.textContent='Yakin hapus? Ketuk lagi';t.classList.add('armed');
+        setTimeout(function(){if(t.isConnected&&delArm===selDate){delArm=null;t.textContent='🗑 Hapus';t.classList.remove('armed');}},3000);return;}
+      var r=recByDate(selDate);setRecs(getRecs().filter(function(x){return x.tanggal!==selDate;}));
+      if(r&&r.id===editingId)editingId=null;refreshAll();toast('Data dihapus');}
+  });
+
   $('dlBtn').addEventListener('click',downloadExcel);
-
-  $('copyBtn').addEventListener('click',function(){
-    var recs=periodRecs(curPeriod);if(!recs.length){toast('Tidak ada data');return;}
-    recs.sort(function(a,b){return (a.tanggal||'').localeCompare(b.tanggal||'')});
-    var s=getSet()||{},totJam=0;recs.forEach(function(r){totJam+=r.total||0;});
-    var lembur=totJam*(s.tLembur||0),totalGaji=(s.gajiPokok||0)+(s.tHadir||0)+(s.tBerkala||0)+lembur;
-    var L=['DGAJI — '+(s.nama||'-'),'Periode: '+periodLabel(curPeriod)+' ('+periodNote(curPeriod)+')',''];
-    recs.forEach(function(r){var hr=HARI[new Date(r.tanggal+'T00:00:00').getDay()];
-      if(r.off)L.push(r.tanggal+' ('+hr+') | OFF/Libur');
-      else L.push(r.tanggal+' ('+hr+') | DTH '+(r.atas50?'>50':'≤50')+' | pulang '+fmt(r.jamPulang)+(r.pengambilan?' | +Ambil':'')+' = '+jamTxt(r.total));});
-    L.push('','Total Jam Jaman: '+jamTxt(totJam),'','Gaji Pokok: '+rupiah(s.gajiPokok),'T. Hadir: '+rupiah(s.tHadir),
-      'T. Berkala: '+rupiah(s.tBerkala),'Uang Lembur: '+rupiah(lembur),'TOTAL GAJI: '+rupiah(totalGaji),'','Uang Makan (dipisah): '+rupiah(s.uangMakan));
-    var txt=L.join('\n');
-    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(function(){toast('Rekap disalin ✓')},function(){fb(txt)});
-    else fb(txt);
-    function fb(t){var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();
-      try{document.execCommand('copy');toast('Rekap disalin ✓')}catch(e){toast('Gagal menyalin')}document.body.removeChild(ta);}});
+  $('copyBtn').addEventListener('click',copyRekap);
 
   $('themeBtn').addEventListener('click',function(){var cur=document.documentElement.getAttribute('data-theme');
     var dark=cur==='dark'||(!cur&&!matchMedia('(prefers-color-scheme:light)').matches);var next=dark?'light':'dark';
@@ -263,7 +346,7 @@ function bind(){
     saveSet(o);showApp();refreshAll();});
 
   document.querySelectorAll('.tab').forEach(function(b){b.addEventListener('click',function(){showTab(this.dataset.tab);});});
-  document.querySelectorAll('.btn').forEach(function(b){b.addEventListener('pointerdown',ripple);});
+  document.addEventListener('pointerdown',function(e){var b=e.target.closest('.btn');if(b)ripple({currentTarget:b,clientX:e.clientX,clientY:e.clientY});});
   bindCurrency();}
 
 function applyGreet(){var s=getSet()||{};$('greet').textContent='Hai, '+(s.nama||'')+' 👋';}
@@ -311,9 +394,9 @@ function initInstall(){
 (function(){
   var th=ls(function(){return localStorage.getItem(K_TH)},null);
   if(th)document.documentElement.setAttribute('data-theme',th);
-  var t=new Date();t.setMinutes(t.getMinutes()-t.getTimezoneOffset());
-  $('tanggal').value=t.toISOString().slice(0,10);
-  curPeriod=todayKey();
+  dedupe();
+  var t=todayStr();$('tanggal').value=t;
+  curPeriod=periodKey(t);selDate=t;var dt=new Date(t+'T00:00:00');calY=dt.getFullYear();calM=dt.getMonth();
   bind();registerSW();initInstall();
   renderHari();renderEcho();renderResult();
   if(getSet()){showApp();refreshAll();}else{$('onboard').hidden=false;}

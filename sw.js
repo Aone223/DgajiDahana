@@ -1,7 +1,7 @@
 /* Service worker DGaji — NETWORK-FIRST: selalu ambil versi terbaru,
    cache hanya dipakai saat offline. Ganti VERSI tiap update. */
-var VERSI='dgaji-v8';
-var ASSETS=['./','./index.html','./styles.css?v=8','./app.js?v=8','./logo.png',
+var VERSI='dgaji-v9';
+var ASSETS=['./','./index.html','./styles.css?v=9','./app.js?v=9','./logo.png',
   './icon-192.png','./icon-512.png','./manifest.json'];
 
 self.addEventListener('install',function(e){

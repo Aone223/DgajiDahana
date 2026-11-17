@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=8">
+<link rel="stylesheet" href="styles.css?v=9">
 </head>
 <body>
 
@@ -34,7 +34,7 @@
         <div><label for="ob_tHadir">T. Hadir</label><div class="cur"><input id="ob_tHadir" class="rp" type="text" inputmode="numeric" value="30.000"></div></div>
         <div><label for="ob_tBerkala">T. Berkala</label><div class="cur"><input id="ob_tBerkala" class="rp" type="text" inputmode="numeric" placeholder="0"></div></div>
         <div><label for="ob_tLembur">T. Lembur <span class="hint">— per 1 jam jaman</span></label><div class="cur"><input id="ob_tLembur" class="rp" type="text" inputmode="numeric" placeholder="0"></div></div>
-        <div><label for="ob_uangMakan">Uang Makan <span class="hint">— dihitung terpisah</span></label><div class="cur"><input id="ob_uangMakan" class="rp" type="text" inputmode="numeric" placeholder="0"></div></div>
+        <div><label for="ob_uangMakan">Uang Makan</label><div class="cur"><input id="ob_uangMakan" class="rp" type="text" inputmode="numeric" placeholder="0"></div></div>
       </div>
       <button class="btn btn-red" id="obStart">Simpan &amp; Mulai →</button>
     </div>
@@ -59,36 +59,50 @@
     <!-- ===== TAB: HITUNG ===== -->
     <section class="screen" id="tab-hitung">
       <div class="card card-input">
-        <p class="card-h">Input Harian</p>
-        <label class="check off-check">
-          <input id="off" type="checkbox">
-          <span><span class="t">OFF / Libur</span><br><span class="d">Hari ini tidak kerja — jam jaman 0</span></span>
-        </label>
-        <div class="off-wrap" id="offWrap">
-          <div class="date-row">
-            <div class="field">
-              <label class="fl" for="tanggal">Tanggal</label>
-              <input id="tanggal" type="date">
-            </div>
-            <div class="hari-badge" id="hariBadge"><span class="d" id="hariNama">—</span><span class="t" id="hariTipe">hari</span></div>
-          </div>
+        <p class="card-h" id="hitungTitle">Input Harian</p>
+        <div class="date-row">
           <div class="field">
-            <label class="fl">Tonase (DTH)</label>
-            <div class="seg" id="segDth">
-              <span class="ind"></span>
-              <button type="button" data-v="bawah" class="on">Di Bawah 50<span class="sm">≤ 50 Ton</span></button>
-              <button type="button" data-v="atas">Di Atas 50<span class="sm">&gt; 50 Ton</span></button>
-            </div>
+            <label class="fl" for="tanggal">Tanggal</label>
+            <input id="tanggal" type="date">
           </div>
-          <div class="field">
-            <label class="fl" for="pulang">Jam Pulang <span class="hint">— ketik, titik dua otomatis</span></label>
-            <input id="pulang" type="text" inputmode="numeric" maxlength="5" placeholder="17:00" value="17:00">
-            <div class="jam-echo" id="jamEcho"></div>
-          </div>
-          <label class="check" style="margin-bottom:0">
-            <input id="pengambilan" type="checkbox">
-            <span><span class="t">Ikut Pengambilan</span><br><span class="d">Ambil bahan peledak — tambah 1 jam</span></span>
+          <div class="hari-badge" id="hariBadge"><span class="d" id="hariNama">—</span><span class="t" id="hariTipe">hari</span></div>
+        </div>
+
+        <div id="formArea">
+          <label class="check off-check">
+            <input id="off" type="checkbox">
+            <span><span class="t">OFF / Libur</span><br><span class="d">Hari ini tidak kerja — jam jaman 0</span></span>
           </label>
+          <div class="off-wrap" id="offWrap">
+            <div class="field">
+              <label class="fl">Tonase (DTH)</label>
+              <div class="seg" id="segDth">
+                <span class="ind"></span>
+                <button type="button" data-v="bawah" class="on">Di Bawah 50<span class="sm">≤ 50 Ton</span></button>
+                <button type="button" data-v="atas">Di Atas 50<span class="sm">&gt; 50 Ton</span></button>
+              </div>
+            </div>
+            <div class="field">
+              <label class="fl" for="pulang">Jam Pulang <span class="hint">— ketik, titik dua otomatis</span></label>
+              <input id="pulang" type="text" inputmode="numeric" maxlength="5" placeholder="17:00" value="17:00">
+              <div class="jam-echo" id="jamEcho"></div>
+            </div>
+            <label class="check" style="margin-bottom:0">
+              <input id="pengambilan" type="checkbox">
+              <span><span class="t">Ikut Pengambilan</span><br><span class="d">Tambah 1 jam</span></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="done-card" id="doneCard" hidden>
+          <div class="done-ic">✓</div>
+          <div class="done-t">Data tanggal ini sudah diinput</div>
+          <div class="done-s">Satu hari cukup satu kali input. Ganti tanggal untuk mengisi hari lain.</div>
+          <div class="done-sum" id="doneSum"></div>
+          <div class="done-act">
+            <button class="btn btn-dark" id="doneEdit">✎ Ubah Data</button>
+            <button class="btn btn-ghost" id="doneSee">Lihat di Riwayat</button>
+          </div>
         </div>
       </div>
 
@@ -98,16 +112,19 @@
         <div class="breakdown" id="breakdown"></div>
       </div>
 
-      <button class="btn btn-red" id="saveBtn">＋ Simpan ke Catatan</button>
+      <div class="save-row" id="saveRow">
+        <button class="btn btn-ghost" id="cancelEdit" hidden>Batal</button>
+        <button class="btn btn-red" id="saveBtn">＋ Simpan ke Catatan</button>
+      </div>
     </section>
 
     <!-- ===== TAB: GAJI ===== -->
     <section class="screen" id="tab-gaji" hidden>
       <div class="card hero-gaji">
-        <div class="period-sel">
-          <label class="fl" for="periodSel">Periode (21 – 20, tutup buku tgl 20)</label>
-          <select id="periodSel"></select>
-          <div class="period-note" id="periodNote"></div>
+        <div class="month-nav">
+          <button class="nav-arrow" id="perPrev" aria-label="Periode sebelumnya">‹</button>
+          <div class="month-lbl"><b id="perLabel">—</b><span id="periodNote"></span></div>
+          <button class="nav-arrow" id="perNext" aria-label="Periode berikutnya">›</button>
         </div>
         <div class="gaji-cap">Total Gaji</div>
         <div class="gaji-big" id="gajiBig">Rp 0</div>
@@ -121,7 +138,7 @@
         <p class="card-h">Rincian Gaji</p>
         <div class="money" id="gajiBreak"></div>
         <div class="makan-card">
-          <div class="lab">Uang Makan <b>(dipisah)</b></div>
+          <div class="lab">Uang Makan</div>
           <div class="amt" id="makanAmt">Rp 0</div>
         </div>
       </div>
@@ -129,16 +146,26 @@
 
     <!-- ===== TAB: RIWAYAT ===== -->
     <section class="screen" id="tab-riwayat" hidden>
-      <div class="card">
-        <p class="card-h">Riwayat Periode</p>
-        <div class="riwayat-top">
-          <select id="periodSel2" aria-label="Pilih periode"></select>
-          <div class="dl-row">
-            <button class="btn btn-red" id="dlBtn">⬇ Excel</button>
-            <button class="btn btn-dark" id="copyBtn">⧉ Salin</button>
-          </div>
+      <div class="card cal-card">
+        <div class="month-nav">
+          <button class="nav-arrow" id="calPrev" aria-label="Bulan sebelumnya">‹</button>
+          <div class="month-lbl"><b id="calLabel">—</b><span id="calSum"></span></div>
+          <button class="nav-arrow" id="calNext" aria-label="Bulan berikutnya">›</button>
         </div>
-        <div id="recList"></div>
+        <div class="cal-head"><span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span><span class="mg">Min</span></div>
+        <div class="cal-grid" id="calGrid"></div>
+        <div class="cal-legend"><span><i class="lg kerja"></i>Kerja</span><span><i class="lg off"></i>OFF</span><span><i class="lg today"></i>Hari ini</span></div>
+      </div>
+
+      <div class="card day-card" id="dayCard"></div>
+
+      <div class="card export-card">
+        <p class="card-h">Unduh Rekap</p>
+        <div class="export-note" id="exportNote"></div>
+        <div class="dl-row">
+          <button class="btn btn-red" id="dlBtn">⬇ Excel</button>
+          <button class="btn btn-dark" id="copyBtn">⧉ Salin Teks</button>
+        </div>
       </div>
     </section>
 
@@ -172,7 +199,7 @@
       <div><label for="st_tHadir">T. Hadir</label><div class="cur"><input id="st_tHadir" class="rp" type="text" inputmode="numeric"></div></div>
       <div><label for="st_tBerkala">T. Berkala</label><div class="cur"><input id="st_tBerkala" class="rp" type="text" inputmode="numeric"></div></div>
       <div><label for="st_tLembur">T. Lembur <span class="hint">— per 1 jam jaman</span></label><div class="cur"><input id="st_tLembur" class="rp" type="text" inputmode="numeric"></div></div>
-      <div><label for="st_uangMakan">Uang Makan <span class="hint">— terpisah</span></label><div class="cur"><input id="st_uangMakan" class="rp" type="text" inputmode="numeric"></div></div>
+      <div><label for="st_uangMakan">Uang Makan</label><div class="cur"><input id="st_uangMakan" class="rp" type="text" inputmode="numeric"></div></div>
       <div class="set-sep">Aplikasi</div>
       <div id="installRow">
         <button class="btn btn-dark" id="installBtn">⬇ Pasang Aplikasi ke HP</button>
@@ -189,6 +216,6 @@
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="app.js?v=8"></script>
+<script src="app.js?v=9"></script>
 </body>
 </html>

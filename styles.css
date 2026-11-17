@@ -326,25 +326,109 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 
   /* Hitung: input kiri, hasil + simpan kanan */
   #tab-hitung{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);grid-template-rows:auto 1fr;gap:22px;align-items:start}
-  #tab-hitung>.card-input{grid-row:1 / span 2}
-  #tab-hitung>.result{grid-column:2}
-  #tab-hitung>#saveBtn{grid-column:2;align-self:start}
+  #tab-hitung>.card-input{grid-row:1 / span 2;grid-column:1}
+  #tab-hitung>.result,#tab-hitung>.save-row{grid-column:2}
+  #tab-hitung>.save-row{align-self:start}
   .result .big{font-size:4rem}
 
   /* Gaji: ringkasan kiri, rincian kanan */
   #tab-gaji{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;align-items:start}
   .gaji-big{font-size:3rem}
 
-  /* Riwayat: kontrol sejajar, catatan grid */
-  .riwayat-top{flex-direction:row;align-items:center}
-  .riwayat-top select{flex:1}
-  .riwayat-top .dl-row{flex:0 0 auto}
-  .riwayat-top .dl-row .btn{padding:13px 22px}
-  #recList{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
-  #recList .rec{margin-bottom:0}
-  #recList .empty{grid-column:1 / -1}
+  /* Riwayat: kalender kiri, detail hari kanan */
+  #tab-riwayat{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);grid-template-rows:auto 1fr;gap:22px;align-items:start}
+  #tab-riwayat>.cal-card{grid-row:1 / span 2}
+  #tab-riwayat>.day-card,#tab-riwayat>.export-card{grid-column:2}
+  .cd{min-height:64px}
+  /* Hitung saat sudah diinput: kartu selebar penuh */
+  #tab-hitung.is-done{grid-template-columns:minmax(0,640px);justify-content:center}
 }
 @media (min-width:1400px){
   .shell{grid-template-columns:260px 1fr}
   .screens{padding:36px 56px}
 }
+
+/* ========================================================
+   v9 — 1 tanggal 1 input · kalender · navigasi bulan
+   ======================================================== */
+@keyframes slideIn{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+@keyframes popIn{from{opacity:0;transform:scale(.97) translateY(6px)}to{opacity:1;transform:none}}
+@keyframes check{0%{transform:scale(0) rotate(-20deg)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+
+.save-row{display:flex;gap:10px}
+.save-row .btn-ghost{flex:0 0 32%}
+.date-row{margin-bottom:17px}
+
+/* kartu sudah diinput */
+.done-card{text-align:center;padding:8px 2px 2px;animation:popIn .4s cubic-bezier(.2,.7,.2,1) both}
+.done-ic{width:58px;height:58px;margin:4px auto 12px;border-radius:50%;display:grid;place-items:center;
+  font-size:1.7rem;font-weight:700;color:#fff;background:linear-gradient(145deg,var(--red-bright),var(--red-deep));
+  box-shadow:0 8px 24px var(--glow);animation:check .5s .1s cubic-bezier(.2,.7,.2,1) both}
+.done-t{font-family:var(--fh);font-weight:700;font-size:1.12rem}
+.done-s{font-size:.82rem;color:var(--muted);margin:5px auto 16px;max-width:300px}
+.done-sum{background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+.done-big{font-family:var(--fh);font-weight:700;font-size:2.4rem;line-height:1;color:var(--red-bright)}
+.done-big small{font-size:1rem;color:var(--muted);font-weight:500}
+.done-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:11px}
+.done-act{display:flex;gap:10px}
+.done-act .btn{padding:13px;font-size:.88rem}
+
+/* navigasi bulan ‹ › */
+.month-nav{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.month-lbl{flex:1;text-align:center;min-width:0}
+.month-lbl b{display:block;font-family:var(--fh);font-weight:700;font-size:1.15rem;letter-spacing:-.2px}
+.month-lbl span{display:block;font-size:.74rem;color:var(--muted);margin-top:2px}
+.nav-arrow{flex:0 0 auto;width:44px;height:44px;border-radius:12px;border:1px solid var(--line);
+  background:var(--surface-2);color:var(--fg);font-size:1.5rem;line-height:1;cursor:pointer;
+  display:grid;place-items:center;transition:transform .12s,background .2s,border-color .2s}
+.nav-arrow:hover{border-color:var(--red);color:var(--red-bright)}
+.nav-arrow:active{transform:scale(.88);background:var(--red-soft)}
+
+/* kalender */
+.cal-head{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:6px}
+.cal-head span{text-align:center;font-size:.68rem;font-weight:600;color:var(--muted);letter-spacing:.4px;text-transform:uppercase}
+.cal-head .mg{color:var(--red-bright)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.cal-grid.slide{animation:slideIn .3s ease both}
+.cd{aspect-ratio:1/1;min-height:42px;border-radius:11px;border:1px solid transparent;background:var(--surface-2);
+  color:var(--fg);font:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:1px;padding:2px;position:relative;transition:transform .12s,background .2s,border-color .2s}
+.cd:active{transform:scale(.9)}
+.cd.empty{background:none;cursor:default}
+.cd .n{font-size:.9rem;font-weight:600;line-height:1}
+.cd.mg .n{color:var(--red-bright)}
+.cd .mk{font-size:.58rem;font-weight:700;line-height:1;padding:2px 4px;border-radius:5px;
+  background:var(--red);color:#fff}
+.cd.off .mk{background:var(--line-2);color:var(--fg)}
+.cd.has{background:var(--red-soft)}
+.cd.has.off{background:var(--surface-3)}
+.cd.today{border-color:var(--red-bright)}
+.cd.sel{background:linear-gradient(145deg,var(--red-bright),var(--red-deep));border-color:transparent;
+  box-shadow:0 6px 18px var(--glow)}
+.cd.sel .n,.cd.sel.mg .n{color:#fff}
+.cd.sel .mk{background:#fff;color:var(--red-deep)}
+.cal-legend{display:flex;justify-content:center;gap:16px;margin-top:14px;font-size:.72rem;color:var(--muted)}
+.cal-legend span{display:flex;align-items:center;gap:6px}
+.lg{width:10px;height:10px;border-radius:3px;display:inline-block}
+.lg.kerja{background:var(--red)} .lg.off{background:var(--line-2)} .lg.today{border:1.5px solid var(--red-bright)}
+
+/* detail hari */
+.day-card.pop-in{animation:popIn .32s cubic-bezier(.2,.7,.2,1) both}
+.day-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}
+.day-date{font-family:var(--fh);font-weight:700;font-size:1.02rem;line-height:1.25}
+.day-sub{font-size:.76rem;color:var(--muted);margin-top:3px}
+.day-total{font-family:var(--fh);font-weight:700;font-size:1.9rem;line-height:1;color:var(--red-bright);white-space:nowrap}
+.day-total small{font-size:.85rem;color:var(--muted);font-weight:500}
+.day-total.off{color:var(--muted);font-size:1.4rem}
+.day-body{background:var(--surface-2);border:1px solid var(--line);border-radius:13px;padding:6px 14px}
+.drow{display:flex;justify-content:space-between;gap:12px;padding:8px 0;font-size:.86rem;border-bottom:1px solid var(--line)}
+.drow:last-child{border-bottom:none}
+.drow span{color:var(--muted)} .drow b{font-weight:600;text-align:right}
+.drow.tot b{color:var(--red-bright);font-family:var(--fh);font-size:1.05rem}
+.drow.tot span{color:var(--fg);font-weight:700}
+.drow.muted b{color:var(--muted);font-weight:500}
+.dsep{height:1px;background:var(--line-2);margin:4px 0}
+.day-empty{text-align:center;color:var(--muted);font-size:.86rem;padding:18px 0 16px}
+.rec-act button.armed{background:var(--red);color:#fff;border-color:var(--red)}
+.export-note{font-size:.8rem;color:var(--muted);margin:-6px 0 14px}
+.export-note b{color:var(--fg)}
