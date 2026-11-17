@@ -92,7 +92,14 @@ function renderResult(){
   bd.innerHTML=h;}
 
 /* ========== PERIODE ========== */
-var curPeriod=null;
+var curPeriod=null, lastGaji=0;
+function reduced(){try{return matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){return false;}}
+function countUp(el,to,render){
+  if(!el)return;if(reduced()){el.textContent=render(to);return;}
+  var start=null,dur=700;
+  function step(ts){if(start===null)start=ts;var p=Math.min((ts-start)/dur,1);var e=1-Math.pow(1-p,3);
+    el.textContent=render(to*e);if(p<1)requestAnimationFrame(step);else el.textContent=render(to);}
+  requestAnimationFrame(step);}
 function todayKey(){return periodKey($('tanggal').value||new Date().toISOString().slice(0,10));}
 function allPeriods(){var keys={};getRecs().forEach(function(r){keys[periodKey(r.tanggal)]=1;});keys[todayKey()]=1;
   return Object.keys(keys).sort().reverse();}
@@ -109,6 +116,7 @@ function renderGaji(){
   $('sumJam').textContent=jamNum(totJam);$('sumHari').textContent=hariKerja;
   var s=getSet()||{};var lembur=totJam*(s.tLembur||0);
   var totalGaji=(s.gajiPokok||0)+(s.tHadir||0)+(s.tBerkala||0)+lembur;
+  lastGaji=totalGaji;
   $('gajiBig').textContent=rupiah(totalGaji);
   $('gajiBreak').innerHTML=
     '<div class="money-row"><span class="k">Gaji Pokok</span><span class="v">'+rupiah(s.gajiPokok)+'</span></div>'+
@@ -183,7 +191,8 @@ function showTab(name){
   ['hitung','gaji','riwayat'].forEach(function(n){$('tab-'+n).hidden=(n!==name);});
   document.querySelectorAll('.tab').forEach(function(b){b.classList.toggle('on',b.dataset.tab===name);});
   $('screens').scrollTop=0;
-  if(name==='gaji')renderGaji();if(name==='riwayat')renderRecs();}
+  if(name==='gaji'){renderGaji();countUp($('gajiBig'),lastGaji,function(v){return rupiah(v);});}
+  if(name==='riwayat')renderRecs();}
 
 /* ========== EVENTS ========== */
 function bind(){
