@@ -244,7 +244,7 @@ function bind(){
     document.documentElement.setAttribute('data-theme',next);ls(function(){localStorage.setItem(K_TH,next)});});
 
   var sm=$('setModal');
-  $('setBtn').addEventListener('click',function(){fillForm('st',getSet()||{});sm.classList.add('show');});
+  $('setBtn').addEventListener('click',function(){fillForm('st',getSet()||{});updateInstallUI();sm.classList.add('show');});
   $('setCancel').addEventListener('click',function(){sm.classList.remove('show')});
   $('setSave').addEventListener('click',function(){var o=readForm('st');if(!o.nama){toast('Nama tidak boleh kosong');return;}
     saveSet(o);applyGreet();refreshAll();sm.classList.remove('show');toast('Pengaturan disimpan ✓');});
@@ -265,6 +265,27 @@ function registerSW(){if('serviceWorker' in navigator){try{
   window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});
 }catch(e){}}}
 
+var deferredPrompt=null, installedFlag=false;
+function isStandalone(){try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;}catch(e){return false;}}
+function isIOS(){return /iphone|ipad|ipod/i.test(navigator.userAgent);}
+function updateInstallUI(){
+  var btn=$('installBtn'),st=$('installState');if(!btn)return;
+  if(isStandalone()||installedFlag){btn.hidden=true;st.hidden=false;st.textContent='✓ Aplikasi sudah terpasang';return;}
+  btn.hidden=false;st.hidden=true;
+}
+function initInstall(){
+  window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferredPrompt=e;updateInstallUI();});
+  window.addEventListener('appinstalled',function(){installedFlag=true;deferredPrompt=null;updateInstallUI();toast('Aplikasi terpasang ✓');});
+  var btn=$('installBtn');
+  if(btn)btn.addEventListener('click',function(){
+    if(deferredPrompt){deferredPrompt.prompt();deferredPrompt.userChoice.then(function(c){
+      if(c&&c.outcome==='accepted')toast('Memasang aplikasi…');deferredPrompt=null;updateInstallUI();});}
+    else if(isIOS())toast('Safari: tombol Bagikan → "Tambah ke Layar Utama"');
+    else toast('Menu browser (⋮) → "Pasang aplikasi" / "Tambah ke Layar Utama"');
+  });
+  updateInstallUI();
+}
+
 /* ========== INIT ========== */
 (function(){
   var th=ls(function(){return localStorage.getItem(K_TH)},null);
@@ -272,7 +293,7 @@ function registerSW(){if('serviceWorker' in navigator){try{
   var t=new Date();t.setMinutes(t.getMinutes()-t.getTimezoneOffset());
   $('tanggal').value=t.toISOString().slice(0,10);
   curPeriod=todayKey();
-  bind();registerSW();
+  bind();registerSW();initInstall();
   renderHari();renderEcho();renderResult();
   if(getSet()){showApp();refreshAll();}else{$('onboard').hidden=false;}
 })();

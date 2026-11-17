@@ -73,13 +73,17 @@ body{background:var(--bg);color:var(--fg);font-family:var(--fb);line-height:1.5;
 /* ========================================================
    APP SHELL
    ======================================================== */
-.shell{height:100%;max-width:480px;margin:0 auto;display:flex;flex-direction:column;
-  background:var(--bg);position:relative}
+.shell{position:fixed;inset:0;max-width:540px;margin-inline:auto;display:flex;flex-direction:column;
+  overflow:hidden;
+  background:
+    radial-gradient(78% 42% at 88% 0%,var(--glow),transparent 62%),
+    radial-gradient(62% 40% at -8% 6%,rgba(138,5,18,.20),transparent 55%),
+    var(--bg)}
 @media (min-width:600px){.shell{border-inline:1px solid var(--line)}}
 
 /* appbar */
 .appbar{flex:0 0 auto;display:flex;align-items:center;gap:11px;
-  padding:12px max(16px,env(safe-area-inset-left)) 12px max(16px,env(safe-area-inset-right));
+  padding:calc(12px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-left)) 12px max(16px,env(safe-area-inset-right));
   background:color-mix(in srgb,var(--surface) 88%,transparent);
   backdrop-filter:blur(12px);border-bottom:1px solid var(--line);position:relative;z-index:5}
 .appbar-txt{min-width:0;flex:1}
@@ -103,7 +107,7 @@ body{background:var(--bg);color:var(--fg);font-family:var(--fb);line-height:1.5;
 .tabbar{flex:0 0 auto;display:grid;grid-template-columns:repeat(3,1fr);
   background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(12px);
   border-top:1px solid var(--line);
-  padding:8px max(10px,env(safe-area-inset-left)) max(8px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-right))}
+  padding:8px max(10px,env(safe-area-inset-left)) calc(8px + env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-right))}
 .tab{background:none;border:none;cursor:pointer;color:var(--muted);font:inherit;
   display:flex;flex-direction:column;align-items:center;gap:4px;padding:7px 4px;border-radius:12px;
   transition:color .2s,background .2s}
@@ -281,3 +285,8 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 @media (prefers-reduced-motion:reduce){
   *{animation-duration:.001s!important;transition-duration:.001s!important}
 }
+
+/* ===== tombol pasang aplikasi ===== */
+#installRow .btn{width:100%}
+.install-state{font-size:.82rem;color:var(--muted);text-align:center;padding:11px;font-weight:600;
+  background:var(--surface-2);border:1px solid var(--line);border-radius:12px}
