@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=10">
+<link rel="stylesheet" href="styles.css?v=11">
 </head>
 <body>
 
@@ -29,12 +29,12 @@
           <label for="ob_nama">Nama Karyawan</label>
           <input id="ob_nama" type="text" placeholder="Nama lengkap" autocomplete="name">
         </div>
-        <div class="set-sep">Komponen Gaji (flat / bulan)</div>
+        <div class="set-sep">Komponen Gaji</div>
         <div><label for="ob_gajiPokok">Gaji Pokok</label><div class="cur"><input id="ob_gajiPokok" class="rp" type="text" inputmode="numeric" placeholder="0"></div></div>
-        <div><label for="ob_tHadir">T. Hadir</label><div class="cur"><input id="ob_tHadir" class="rp" type="text" inputmode="numeric" value="30.000"></div></div>
+        <div><label for="ob_tHadir">T. Hadir <span class="hint">— per hari kerja</span></label><div class="cur"><input id="ob_tHadir" class="rp" type="text" inputmode="numeric" value="30.000"></div></div>
         <div><label for="ob_tBerkala">T. Berkala</label><div class="cur"><input id="ob_tBerkala" class="rp" type="text" inputmode="numeric" placeholder="0"></div></div>
         <div><label for="ob_tLembur">T. Lembur <span class="hint">— per 1 jam jaman</span></label><div class="cur"><input id="ob_tLembur" class="rp" type="text" inputmode="numeric" placeholder="0"></div></div>
-        <div><label for="ob_uangMakan">Uang Makan</label><div class="cur"><input id="ob_uangMakan" class="rp" type="text" inputmode="numeric" placeholder="0"></div></div>
+        <div><label for="ob_uangMakan">Uang Makan <span class="hint">— per hari kerja</span></label><div class="cur"><input id="ob_uangMakan" class="rp" type="text" inputmode="numeric" placeholder="0"></div></div>
       </div>
       <button class="btn btn-red" id="obStart">Simpan &amp; Mulai →</button>
     </div>
@@ -138,7 +138,7 @@
         <p class="card-h">Rincian Gaji</p>
         <div class="money" id="gajiBreak"></div>
         <div class="makan-card">
-          <div class="lab">Uang Makan</div>
+          <div class="lab">Uang Makan<small id="makanSub"></small></div>
           <div class="amt" id="makanAmt">Rp 0</div>
         </div>
       </div>
@@ -194,12 +194,12 @@
     <h3>⚙ Pengaturan</h3>
     <div class="set-grid">
       <div><label for="st_nama">Nama Karyawan</label><input id="st_nama" type="text" placeholder="Nama lengkap"></div>
-      <div class="set-sep">Komponen Gaji (flat / bulan)</div>
+      <div class="set-sep">Komponen Gaji</div>
       <div><label for="st_gajiPokok">Gaji Pokok</label><div class="cur"><input id="st_gajiPokok" class="rp" type="text" inputmode="numeric"></div></div>
-      <div><label for="st_tHadir">T. Hadir</label><div class="cur"><input id="st_tHadir" class="rp" type="text" inputmode="numeric"></div></div>
+      <div><label for="st_tHadir">T. Hadir <span class="hint">— per hari kerja</span></label><div class="cur"><input id="st_tHadir" class="rp" type="text" inputmode="numeric"></div></div>
       <div><label for="st_tBerkala">T. Berkala</label><div class="cur"><input id="st_tBerkala" class="rp" type="text" inputmode="numeric"></div></div>
       <div><label for="st_tLembur">T. Lembur <span class="hint">— per 1 jam jaman</span></label><div class="cur"><input id="st_tLembur" class="rp" type="text" inputmode="numeric"></div></div>
-      <div><label for="st_uangMakan">Uang Makan</label><div class="cur"><input id="st_uangMakan" class="rp" type="text" inputmode="numeric"></div></div>
+      <div><label for="st_uangMakan">Uang Makan <span class="hint">— per hari kerja</span></label><div class="cur"><input id="st_uangMakan" class="rp" type="text" inputmode="numeric"></div></div>
       <div class="set-sep">Aplikasi</div>
       <div id="installRow">
         <button class="btn btn-dark" id="installBtn">⬇ Pasang Aplikasi ke HP</button>
@@ -216,6 +216,6 @@
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="app.js?v=10"></script>
+<script src="app.js?v=11"></script>
 </body>
 </html>

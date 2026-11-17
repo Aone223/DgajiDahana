@@ -442,3 +442,4 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   .month-lbl b{font-size:1.05rem}
   .cal-legend{gap:12px;flex-wrap:wrap}
 }
+.makan-card .lab small{display:block;font-size:.72rem;color:var(--faint);margin-top:2px}

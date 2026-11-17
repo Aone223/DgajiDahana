@@ -107,8 +107,9 @@ function periodRecs(k){return getRecs().filter(function(r){return periodKey(r.ta
 function calcPeriod(k){
   var recs=periodRecs(k),totJam=0,hari=0;recs.forEach(function(r){totJam+=r.total||0;if(!r.off)hari++;});
   var s=getSet()||{},lembur=totJam*(s.tLembur||0);
-  return {recs:recs,totJam:totJam,hari:hari,s:s,lembur:lembur,total:(s.gajiPokok||0)+(s.tHadir||0)+(s.tBerkala||0)+lembur};}
-
+  var hadir=hari*(s.tHadir||0), makan=hari*(s.uangMakan||0);   // dikali jumlah hari kerja
+  return {recs:recs,totJam:totJam,hari:hari,s:s,lembur:lembur,hadir:hadir,makan:makan,
+    total:(s.gajiPokok||0)+(s.tBerkala||0)+hadir+lembur};}
 function renderGaji(){
   $('perLabel').textContent=periodLabel(curPeriod);$('periodNote').textContent=periodNote(curPeriod);
   var c=calcPeriod(curPeriod),s=c.s;lastGaji=c.total;
@@ -116,11 +117,12 @@ function renderGaji(){
   $('gajiBig').textContent=rupiah(c.total);
   $('gajiBreak').innerHTML=
     '<div class="money-row"><span class="k">Gaji Pokok</span><span class="v">'+rupiah(s.gajiPokok)+'</span></div>'+
-    '<div class="money-row"><span class="k">T. Hadir</span><span class="v">'+rupiah(s.tHadir)+'</span></div>'+
     '<div class="money-row"><span class="k">T. Berkala</span><span class="v">'+rupiah(s.tBerkala)+'</span></div>'+
+    '<div class="money-row"><span class="k">T. Hadir<small>'+c.hari+' hari × '+rupiah(s.tHadir)+'</small></span><span class="v">'+rupiah(c.hadir)+'</span></div>'+
     '<div class="money-row"><span class="k">Uang Lembur<small>'+jamNum(c.totJam)+' jam × '+rupiah(s.tLembur)+'</small></span><span class="v">'+rupiah(c.lembur)+'</span></div>'+
     '<div class="money-row tot"><span class="k">Total Gaji</span><span class="v">'+rupiah(c.total)+'</span></div>';
-  $('makanAmt').textContent=rupiah(s.uangMakan);}
+  $('makanAmt').textContent=rupiah(c.makan);
+  $('makanSub').textContent=c.hari+' hari × '+rupiah(s.uangMakan);}
 
 /* ========== DATA PER TANGGAL ========== */
 function recByDate(d){var r=getRecs().filter(function(x){return x.tanggal===d;});return r.length?r[r.length-1]:null;}
@@ -226,9 +228,9 @@ function downloadExcel(){
     if(r.off)aoa.push([r.tanggal,hr,'OFF / Libur','','','',0]);
     else aoa.push([r.tanggal,hr,'Kerja',(r.atas50?'> 50 Ton':'≤ 50 Ton'),fmt(r.jamPulang),(r.pengambilan?'Ya':'-'),r.total]);});
   aoa.push([],['','','','','','TOTAL JAM JAMAN',Math.round(c.totJam*100)/100],[],
-    ['RINCIAN GAJI'],['Gaji Pokok',s.gajiPokok||0],['T. Hadir',s.tHadir||0],['T. Berkala',s.tBerkala||0],
+    ['RINCIAN GAJI'],['Gaji Pokok',s.gajiPokok||0],['T. Berkala',s.tBerkala||0],['T. Hadir ('+c.hari+' hari x '+(s.tHadir||0)+')',c.hadir],
     ['Uang Lembur ('+jamNum(c.totJam)+' jam x '+(s.tLembur||0)+')',Math.round(c.lembur)],['TOTAL GAJI',Math.round(c.total)],
-    [],['Uang Makan',s.uangMakan||0]);
+    [],['Uang Makan ('+c.hari+' hari x '+(s.uangMakan||0)+')',c.makan]);
   var ws=XLSX.utils.aoa_to_sheet(aoa);ws['!cols']=[{wch:24},{wch:10},{wch:12},{wch:10},{wch:11},{wch:12},{wch:11}];
   ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:6}}];
   var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'DGaji');
@@ -241,8 +243,8 @@ function copyRekap(){
   recs.forEach(function(r){var hr=HARI[new Date(r.tanggal+'T00:00:00').getDay()];
     if(r.off)L.push(r.tanggal+' ('+hr+') | OFF/Libur');
     else L.push(r.tanggal+' ('+hr+') | DTH '+(r.atas50?'>50':'≤50')+' | pulang '+fmt(r.jamPulang)+(r.pengambilan?' | +Pengambilan':'')+' = '+jamTxt(r.total));});
-  L.push('','Total Jam Jaman: '+jamTxt(c.totJam),'','Gaji Pokok: '+rupiah(s.gajiPokok),'T. Hadir: '+rupiah(s.tHadir),
-    'T. Berkala: '+rupiah(s.tBerkala),'Uang Lembur: '+rupiah(c.lembur),'TOTAL GAJI: '+rupiah(c.total),'','Uang Makan: '+rupiah(s.uangMakan));
+  L.push('','Total Jam Jaman: '+jamTxt(c.totJam),'','Gaji Pokok: '+rupiah(s.gajiPokok),'T. Berkala: '+rupiah(s.tBerkala),
+    'T. Hadir ('+c.hari+' hari × '+rupiah(s.tHadir)+'): '+rupiah(c.hadir),'Uang Lembur: '+rupiah(c.lembur),'TOTAL GAJI: '+rupiah(c.total),'','Uang Makan ('+c.hari+' hari × '+rupiah(s.uangMakan)+'): '+rupiah(c.makan));
   var txt=L.join('\n');
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(function(){toast('Rekap disalin ✓')},function(){fb(txt)});
   else fb(txt);
