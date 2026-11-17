@@ -339,7 +339,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   #tab-riwayat{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);grid-template-rows:auto 1fr;gap:22px;align-items:start}
   #tab-riwayat>.cal-card{grid-row:1 / span 2}
   #tab-riwayat>.day-card,#tab-riwayat>.export-card{grid-column:2}
-  .cd{min-height:64px}
+  .cd{aspect-ratio:auto;min-height:64px}
   /* Hitung saat sudah diinput: kartu selebar penuh */
   #tab-hitung.is-done{grid-template-columns:minmax(0,640px);justify-content:center}
 }
@@ -385,19 +385,19 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .nav-arrow:active{transform:scale(.88);background:var(--red-soft)}
 
 /* kalender */
-.cal-head{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:6px}
-.cal-head span{text-align:center;font-size:.68rem;font-weight:600;color:var(--muted);letter-spacing:.4px;text-transform:uppercase}
+.cal-head{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-bottom:6px}
+.cal-head span{text-align:center;font-size:clamp(.55rem,2.6vw,.68rem);overflow:hidden;font-weight:600;color:var(--muted);letter-spacing:.4px;text-transform:uppercase}
 .cal-head .mg{color:var(--red-bright)}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
 .cal-grid.slide{animation:slideIn .3s ease both}
-.cd{aspect-ratio:1/1;min-height:42px;border-radius:11px;border:1px solid transparent;background:var(--surface-2);
+.cd{aspect-ratio:1/1;min-width:0;width:100%;border-radius:10px;border:1px solid transparent;background:var(--surface-2);
   color:var(--fg);font:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:1px;padding:2px;position:relative;transition:transform .12s,background .2s,border-color .2s}
 .cd:active{transform:scale(.9)}
 .cd.empty{background:none;cursor:default}
-.cd .n{font-size:.9rem;font-weight:600;line-height:1}
+.cd .n{font-size:clamp(.72rem,3.4vw,.95rem);font-weight:600;line-height:1}
 .cd.mg .n{color:var(--red-bright)}
-.cd .mk{font-size:.58rem;font-weight:700;line-height:1;padding:2px 4px;border-radius:5px;
+.cd .mk{font-size:clamp(.5rem,2.3vw,.62rem);max-width:100%;overflow:hidden;font-weight:700;line-height:1;padding:2px 4px;border-radius:5px;
   background:var(--red);color:#fff}
 .cd.off .mk{background:var(--line-2);color:var(--fg)}
 .cd.has{background:var(--red-soft)}
@@ -432,3 +432,13 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .rec-act button.armed{background:var(--red);color:#fff;border-color:var(--red)}
 .export-note{font-size:.8rem;color:var(--muted);margin:-6px 0 14px}
 .export-note b{color:var(--fg)}
+
+/* HP kecil / tulisan besar: kalender tetap muat */
+@media (max-width:420px){
+  .cal-card{padding:16px 12px}
+  .cal-grid,.cal-head{gap:3px}
+  .month-nav{gap:8px}
+  .nav-arrow{width:40px;height:40px}
+  .month-lbl b{font-size:1.05rem}
+  .cal-legend{gap:12px;flex-wrap:wrap}
+}
