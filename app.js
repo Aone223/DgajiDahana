@@ -220,24 +220,114 @@ function safeName(s){return (s||'karyawan').replace(/[^\w\-]+/g,'_').replace(/^_
 function exportKey(){return ds(calY,calM,15).slice(0,7);}
 function downloadExcel(){
   var k=exportKey();
-  if(typeof XLSX==='undefined'){toast('Library Excel belum siap');return;}
+  if(typeof ExcelJS==='undefined'){toast('Komponen Excel belum siap, coba lagi');return;}
   var c=calcPeriod(k),recs=c.recs.slice().sort(function(a,b){return a.tanggal.localeCompare(b.tanggal)});
   if(!recs.length){toast('Tidak ada data di periode ini');return;}
-  var s=c.s,nama=s.nama||'-';
-  var aoa=[['DGAJI — DAHANA'],['Nama',nama],['Periode',periodLabel(k)+'  ('+periodNote(k)+')'],[],
-    ['Tanggal','Hari','Status','DTH','Jam Pulang','Pengambilan','Jam Kerja']];
-  recs.forEach(function(r){var hr=HARI[new Date(r.tanggal+'T00:00:00').getDay()];
-    if(r.off)aoa.push([r.tanggal,hr,'OFF / Libur','','','',0]);
-    else aoa.push([r.tanggal,hr,'Kerja',(r.atas50?'> 50 Ton':'≤ 50 Ton'),fmt(r.jamPulang),(r.pengambilan?'Ya':'-'),r.total]);});
-  aoa.push([],['','','','','','TOTAL JAM KERJA',Math.round(c.totJam*100)/100],[],
-    ['RINCIAN GAJI'],['Gaji Pokok',s.gajiPokok||0],['T. Berkala',s.tBerkala||0],['T. Hadir ('+c.hari+' hari x '+(s.tHadir||0)+')',c.hadir],
-    ['Uang Lembur ('+jamNum(c.totJam)+' jam x '+(s.tLembur||0)+')',Math.round(c.lembur)],['TOTAL GAJI',Math.round(c.total)],
-    [],['Uang Makan ('+c.hari+' hari x '+(s.uangMakan||0)+')',c.makan]);
-  var ws=XLSX.utils.aoa_to_sheet(aoa);ws['!cols']=[{wch:24},{wch:10},{wch:12},{wch:10},{wch:11},{wch:12},{wch:11}];
-  ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:6}}];
-  var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'DGaji');
-  try{XLSX.writeFile(wb,'DGaji_'+safeName(nama)+'_'+k+'.xlsx');toast('Mengunduh Excel ✓');}
-  catch(e){toast('Unduhan diblokir di preview — jalan saat di hosting');}}
+  var s=c.s,nama=s.nama||'-',offCount=recs.filter(function(r){return r.off;}).length;
+  var RED='FFC70C22',DARK='FF1E1E24',ZEBRA='FFF5F5F7',LINE='FFD5D5DB',SOFT='FFFCE9EB',GREY='FF6A6A75',WHITE='FFFFFFFF';
+  var RP='"Rp" #,##0', JAM='#,##0.0';
+  function fill(c){return {type:'pattern',pattern:'solid',fgColor:{argb:c}};}
+  var thin={style:'thin',color:{argb:LINE}},box={top:thin,left:thin,bottom:thin,right:thin};
+
+  var wb=new ExcelJS.Workbook();wb.creator='DGaji';wb.created=new Date();
+  var ws=wb.addWorksheet(('Rekap '+periodLabel(k)).slice(0,31),{
+    views:[{showGridLines:false}],
+    pageSetup:{paperSize:9,orientation:'portrait',fitToPage:true,fitToWidth:1,fitToHeight:0,horizontalCentered:true,
+      margins:{left:0.4,right:0.4,top:0.5,bottom:0.5,header:0.2,footer:0.2}}});
+  ws.columns=[{width:5},{width:13},{width:10},{width:13},{width:11},{width:12},{width:13},{width:12}];
+
+  // ---- judul ----
+  ws.mergeCells('A1:H1');var t=ws.getCell('A1');
+  t.value='REKAP JAM KERJA & GAJI';t.font={name:'Calibri',bold:true,size:16,color:{argb:WHITE}};
+  t.fill=fill(RED);t.alignment={vertical:'middle',horizontal:'center'};ws.getRow(1).height=34;
+  ws.mergeCells('A2:H2');var st=ws.getCell('A2');
+  st.value='DGaji · Dahana';st.font={italic:true,size:10,color:{argb:GREY}};st.alignment={horizontal:'center'};
+
+  // ---- info karyawan ----
+  var info=[['Nama',nama],['Periode Gaji',periodLabel(k)],['Rentang Tanggal',periodNote(k)+'  (tutup buku tgl 20)'],
+    ['Hari Kerja',c.hari+' hari'+(offCount?'  ·  OFF/Libur '+offCount+' hari':'')],
+    ['Dibuat',new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})]];
+  var r=4;
+  info.forEach(function(it){
+    ws.mergeCells('A'+r+':B'+r);ws.mergeCells('C'+r+':H'+r);
+    var l=ws.getCell('A'+r),v=ws.getCell('C'+r);
+    l.value=it[0];l.font={bold:true,size:10,color:{argb:GREY}};
+    v.value=it[1];v.font={bold:it[0]==='Nama',size:11};
+    ['A','B','C','D','E','F','G','H'].forEach(function(col){ws.getCell(col+r).border={bottom:thin};});
+    ws.getRow(r).height=18;r++;});
+
+  // ---- tabel harian ----
+  r++;var head=r;
+  var cols=['No','Tanggal','Hari','Status','DTH','Jam Pulang','Pengambilan','Jam Kerja'];
+  cols.forEach(function(h,i){var cell=ws.getRow(r).getCell(i+1);cell.value=h;
+    cell.font={bold:true,size:10,color:{argb:WHITE}};cell.fill=fill(DARK);cell.border=box;
+    cell.alignment={vertical:'middle',horizontal:'center',wrapText:true};});
+  ws.getRow(r).height=22;r++;
+  var first=r;
+  recs.forEach(function(rec,i){
+    var p=rec.tanggal.split('-'),row=ws.getRow(r);
+    var hr=HARI[new Date(rec.tanggal+'T00:00:00').getDay()];
+    var vals=[i+1,new Date(Date.UTC(+p[0],+p[1]-1,+p[2])),hr,
+      rec.off?'OFF / Libur':'Kerja',
+      rec.off?'-':(rec.atas50?'> 50 Ton':'≤ 50 Ton'),
+      rec.off?'-':fmt(rec.jamPulang),
+      rec.off?'-':(rec.pengambilan?'Ya':'Tidak'),
+      rec.total||0];
+    vals.forEach(function(v,j){var cell=row.getCell(j+1);cell.value=v;cell.border=box;
+      cell.font={size:10,color:{argb:rec.off?GREY:'FF141418'},italic:!!rec.off};
+      cell.alignment={vertical:'middle',horizontal:(j===2||j===3)?'left':'center'};
+      if(i%2===1)cell.fill=fill(ZEBRA);});
+    row.getCell(2).numFmt='dd/mm/yyyy';row.getCell(8).numFmt=JAM;
+    if(hr==='Minggu')row.getCell(3).font={size:10,bold:true,color:{argb:RED}};
+    row.height=18;r++;});
+  var last=r-1;
+  ws.mergeCells('A'+r+':G'+r);
+  var tl=ws.getCell('A'+r);tl.value='TOTAL JAM KERJA';tl.alignment={horizontal:'right',vertical:'middle'};
+  tl.font={bold:true,size:11};
+  var tv=ws.getCell('H'+r);tv.value={formula:'SUM(H'+first+':H'+last+')',result:Math.round(c.totJam*100)/100};
+  tv.numFmt=JAM;tv.font={bold:true,size:11,color:{argb:RED}};tv.alignment={horizontal:'center',vertical:'middle'};
+  ['A','B','C','D','E','F','G','H'].forEach(function(col){var x=ws.getCell(col+r);x.fill=fill(SOFT);x.border=box;});
+  ws.getRow(r).height=22;var totRow=r;r+=2;
+
+  // ---- rincian gaji ----
+  ws.mergeCells('A'+r+':H'+r);var rg=ws.getCell('A'+r);rg.value='RINCIAN GAJI';
+  rg.font={bold:true,size:11,color:{argb:WHITE}};rg.fill=fill(DARK);rg.alignment={horizontal:'left',vertical:'middle',indent:1};
+  ws.getRow(r).height=22;r++;
+  function gaji(label,ket,val,style){
+    ws.mergeCells('A'+r+':C'+r);ws.mergeCells('D'+r+':F'+r);ws.mergeCells('G'+r+':H'+r);
+    var a=ws.getCell('A'+r),b=ws.getCell('D'+r),v=ws.getCell('G'+r);
+    a.value=label;b.value=ket||'';v.value=val;v.numFmt=RP;
+    a.alignment={vertical:'middle',indent:1};b.alignment={vertical:'middle'};v.alignment={horizontal:'right',vertical:'middle'};
+    a.font={size:10,bold:!!style};b.font={size:9,color:{argb:GREY}};v.font={size:10,bold:!!style};
+    ['A','B','C','D','E','F','G','H'].forEach(function(col){var x=ws.getCell(col+r);x.border=box;
+      if(style==='total')x.fill=fill(RED);if(style==='makan')x.fill=fill(ZEBRA);});
+    if(style==='total'){a.font={size:12,bold:true,color:{argb:WHITE}};v.font={size:12,bold:true,color:{argb:WHITE}};}
+    ws.getRow(r).height=style==='total'?24:19;r++;}
+  var g0=r;
+  gaji('Gaji Pokok','Tetap',s.gajiPokok||0);
+  gaji('T. Berkala','Tetap',s.tBerkala||0);
+  gaji('T. Hadir',c.hari+' hari × '+rupiah(s.tHadir),Math.round(c.hadir));
+  var lr=r;gaji('Uang Lembur',jamNum(c.totJam)+' jam × '+rupiah(s.tLembur),Math.round(c.lembur));
+  ws.getCell('G'+lr).value={formula:'ROUND(H'+totRow+'*'+(s.tLembur||0)+',0)',result:Math.round(c.lembur)};
+  gaji('TOTAL GAJI','',{formula:'SUM(G'+g0+':G'+(r-1)+')',result:Math.round(c.total)},'total');
+  r++;
+  gaji('Uang Makan',c.hari+' hari × '+rupiah(s.uangMakan),Math.round(c.makan),'makan');
+  r++;
+  ws.mergeCells('A'+r+':H'+r);var nt=ws.getCell('A'+r);
+  nt.value='Uang Makan dibayarkan terpisah dari Total Gaji. Hari OFF/Libur tidak dihitung sebagai hari kerja.';
+  nt.font={italic:true,size:9,color:{argb:GREY}};nt.alignment={wrapText:true};ws.getRow(r).height=26;
+
+  ws.views=[{showGridLines:false,state:'frozen',ySplit:head}];
+  ws.pageSetup.printTitlesRow=head+':'+head;
+
+  var fname='DGaji_'+safeName(nama)+'_'+k+'.xlsx';
+  wb.xlsx.writeBuffer().then(function(buf){
+    var blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fname;
+    document.body.appendChild(a);a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},2000);
+    toast('Mengunduh Excel ✓');
+  }).catch(function(){toast('Gagal membuat Excel — coba lagi');});}
 function copyRekap(){
   var k=exportKey(),c=calcPeriod(k),recs=c.recs.slice().sort(function(a,b){return a.tanggal.localeCompare(b.tanggal)});
   if(!recs.length){toast('Tidak ada data');return;}
