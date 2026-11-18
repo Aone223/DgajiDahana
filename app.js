@@ -28,7 +28,9 @@ function maskTime(str){var d=String(str).replace(/\D/g,'');if(!d)return '';
   var hl=(d.charAt(0)>='3')?1:2;if(d.length<=hl)return d;return d.slice(0,hl)+':'+d.slice(hl,hl+2);}
 function parseJam(raw){var d=String(raw).replace(/\D/g,'');if(!d)return null;
   var hl=(d.charAt(0)>='3')?1:2;var h=parseInt(d.slice(0,hl),10);var m=parseInt(d.slice(hl,hl+2)||'0',10);
-  if(isNaN(h)||isNaN(m)||m>59)return null;if(h>=1&&h<=11)h+=12;if(h>23)return null;return h*60+m;}
+  if(isNaN(h)||isNaN(m)||m>59)return null;var nolDepan=d.charAt(0)==='0';
+  if(!nolDepan&&h>=1&&h<=7)h+=12;   /* 5 -> 17:00, tapi 05:00 tetap pagi */
+  if(h<8||h>23)return null;return h*60+m;}  /* minimal 08:00 */
 
 function dayType(s){if(!s)return 'biasa';var g=new Date(s+'T00:00:00').getDay();
   if(g===0)return 'minggu';if(g===6)return 'sabtu';return 'biasa';}
@@ -38,7 +40,7 @@ function periodLabel(k){var p=k.split('-');return BULAN[parseInt(p[1],10)-1]+' '
 function periodNote(k){var p=k.split('-'),y=+p[0],m=+p[1]-1;var sm=m-1,sy=y;if(sm<0){sm=11;sy--;}
   return '21 '+BLN[sm]+' '+(sy!==y?sy+' ':'')+'– 20 '+BLN[m]+' '+y;}
 
-/* ========== INTI JAM JAMAN ========== */
+/* ========== INTI JAM KERJA ========== */
 function hitung(o){
   var lewat=o.jamPulang!=null&&o.jamPulang>CUT;var atas50=lewat?true:o.atas50;
   var base=0,lembur=0,bulat=o.jamPulang,kalc='',rM=0;
@@ -63,31 +65,31 @@ function curInput(){return {type:dayType($('tanggal').value),
 
 /* ========== RENDER INPUT ========== */
 function renderHari(){var t=$('tanggal').value,b=$('hariBadge');b.className='hari-badge';
-  if(!t){$('hariNama').textContent='—';$('hariTipe').textContent='hari';return;}
+  if(!t){$('hariNama').textContent='—';return;}
   var g=new Date(t+'T00:00:00').getDay(),ty=dayType(t);
-  $('hariNama').textContent=HARI[g];$('hariTipe').textContent=ty==='biasa'?'Hari Biasa':ty;
+  $('hariNama').textContent=HARI[g];
   if(ty!=='biasa')b.classList.add(ty);}
 function renderEcho(){var raw=$('pulang').value,el=$('jamEcho'),m=parseJam(raw);
   if(!raw){el.textContent='';el.className='jam-echo';return;}
-  if(m==null){el.className='jam-echo bad';el.textContent='Format jam belum terbaca — contoh 17:12';return;}
+  if(m==null){el.className='jam-echo bad';el.textContent='Jam pulang tidak valid — minimal 08:00';return;}
   el.className='jam-echo';
   if(m>CUT)el.innerHTML='Pukul <b>'+fmt(m)+'</b> · <span class="ov">lembur, dibulatkan '+fmt(Math.ceil((m-CUT)/30)*30+CUT)+'</span>';
-  else el.innerHTML='Pukul <b>'+fmt(m)+'</b> · '+(m===CUT?'pas jam 5':'pulang normal');}
+  else el.innerHTML='Pukul <b>'+fmt(m)+'</b>';}
 var lastTotal=null;
 function renderResult(){
   var res=$('result'),big=$('bigTotal'),bd=$('breakdown'),cap=res.querySelector('.cap');
   if(isOff()){res.classList.add('off');$('offWrap').classList.add('disabled');
     cap.textContent='Status Hari Ini';big.innerHTML='OFF <small>/ libur</small>';
     bd.innerHTML='<div class="brow"><span>Hari libur / tidak kerja</span><span>0 jam</span></div>';lastTotal=null;return;}
-  res.classList.remove('off');$('offWrap').classList.remove('disabled');cap.textContent='Jam Jaman Hari Ini';
+  res.classList.remove('off');$('offWrap').classList.remove('disabled');cap.textContent='Jam Kerja Hari Ini';
   var i=curInput();if(i.jamPulang==null){big.innerHTML='—';bd.innerHTML='';lastTotal=null;return;}
   var r=hitung(i);big.innerHTML=jamNum(r.total)+' <small>jam</small>';
   if(lastTotal!==null&&lastTotal!==r.total){big.classList.remove('bump');void big.offsetWidth;big.classList.add('bump');}
   lastTotal=r.total;
-  var h='<div class="brow"><span>Dasar — '+r.kalc+'</span><span>'+jamTxt(r.base)+'</span></div>';
+  var h='<div class="brow"><span>'+r.kalc+'</span><span>'+jamTxt(r.base)+'</span></div>';
   if(r.lembur>0)h+='<div class="brow"><span>Lembur (pulang → '+fmt(r.bulat)+')</span><span>+'+jamTxt(r.lembur)+'</span></div>';
   if(r.ambil>0)h+='<div class="brow"><span>Ikut Pengambilan</span><span>+1 jam</span></div>';
-  h+='<div class="brow tot"><span>Total Jam Jaman</span><span>'+jamTxt(r.total)+'</span></div>';
+  h+='<div class="brow tot"><span>Total Jam Kerja</span><span>'+jamTxt(r.total)+'</span></div>';
   if(r.forced)h+='<div class="note">⚠️ <span>Pulang lewat jam 5 otomatis dihitung <b>di atas 50 Ton</b>.</span></div>';
   bd.innerHTML=h;}
 
@@ -140,11 +142,11 @@ function recBreakdown(r){
     '<div class="drow"><span>Jam pulang</span><b>'+fmt(r.jamPulang)+(h.lewat?' → '+fmt(h.bulat):'')+'</b></div>'+
     '<div class="drow"><span>Ikut Pengambilan</span><b>'+(r.pengambilan?'Ya':'Tidak')+'</b></div>'+
     '<div class="dsep"></div>'+
-    '<div class="drow"><span>Jam dasar</span><b>'+jamTxt(h.base)+'</b></div>';
+    '<div class="drow"><span>Jam normal</span><b>'+jamTxt(h.base)+'</b></div>';
   if(h.lembur>0)x+='<div class="drow"><span>Lembur</span><b>+'+jamTxt(h.lembur)+'</b></div>';
   if(h.ambil>0)x+='<div class="drow"><span>Pengambilan</span><b>+1 jam</b></div>';
   var s=getSet()||{};
-  x+='<div class="drow tot"><span>Total jam jaman</span><b>'+jamTxt(r.total)+'</b></div>'+
+  x+='<div class="drow tot"><span>Total jam kerja</span><b>'+jamTxt(r.total)+'</b></div>'+
      '<div class="drow muted"><span>Nilai lembur hari ini</span><b>'+rupiah(r.total*(s.tLembur||0))+'</b></div>';
   return x;}
 
@@ -223,11 +225,11 @@ function downloadExcel(){
   if(!recs.length){toast('Tidak ada data di periode ini');return;}
   var s=c.s,nama=s.nama||'-';
   var aoa=[['DGAJI — DAHANA'],['Nama',nama],['Periode',periodLabel(k)+'  ('+periodNote(k)+')'],[],
-    ['Tanggal','Hari','Status','DTH','Jam Pulang','Pengambilan','Jam Jaman']];
+    ['Tanggal','Hari','Status','DTH','Jam Pulang','Pengambilan','Jam Kerja']];
   recs.forEach(function(r){var hr=HARI[new Date(r.tanggal+'T00:00:00').getDay()];
     if(r.off)aoa.push([r.tanggal,hr,'OFF / Libur','','','',0]);
     else aoa.push([r.tanggal,hr,'Kerja',(r.atas50?'> 50 Ton':'≤ 50 Ton'),fmt(r.jamPulang),(r.pengambilan?'Ya':'-'),r.total]);});
-  aoa.push([],['','','','','','TOTAL JAM JAMAN',Math.round(c.totJam*100)/100],[],
+  aoa.push([],['','','','','','TOTAL JAM KERJA',Math.round(c.totJam*100)/100],[],
     ['RINCIAN GAJI'],['Gaji Pokok',s.gajiPokok||0],['T. Berkala',s.tBerkala||0],['T. Hadir ('+c.hari+' hari x '+(s.tHadir||0)+')',c.hadir],
     ['Uang Lembur ('+jamNum(c.totJam)+' jam x '+(s.tLembur||0)+')',Math.round(c.lembur)],['TOTAL GAJI',Math.round(c.total)],
     [],['Uang Makan ('+c.hari+' hari x '+(s.uangMakan||0)+')',c.makan]);
@@ -243,7 +245,7 @@ function copyRekap(){
   recs.forEach(function(r){var hr=HARI[new Date(r.tanggal+'T00:00:00').getDay()];
     if(r.off)L.push(r.tanggal+' ('+hr+') | OFF/Libur');
     else L.push(r.tanggal+' ('+hr+') | DTH '+(r.atas50?'>50':'≤50')+' | pulang '+fmt(r.jamPulang)+(r.pengambilan?' | +Pengambilan':'')+' = '+jamTxt(r.total));});
-  L.push('','Total Jam Jaman: '+jamTxt(c.totJam),'','Gaji Pokok: '+rupiah(s.gajiPokok),'T. Berkala: '+rupiah(s.tBerkala),
+  L.push('','Total Jam Kerja: '+jamTxt(c.totJam),'','Gaji Pokok: '+rupiah(s.gajiPokok),'T. Berkala: '+rupiah(s.tBerkala),
     'T. Hadir ('+c.hari+' hari × '+rupiah(s.tHadir)+'): '+rupiah(c.hadir),'Uang Lembur: '+rupiah(c.lembur),'TOTAL GAJI: '+rupiah(c.total),'','Uang Makan ('+c.hari+' hari × '+rupiah(s.uangMakan)+'): '+rupiah(c.makan));
   var txt=L.join('\n');
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(function(){toast('Rekap disalin ✓')},function(){fb(txt)});

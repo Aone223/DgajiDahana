@@ -48,10 +48,9 @@ body{background:var(--bg);color:var(--fg);font-family:var(--fb);line-height:1.5;
 @keyframes fadeScreen{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
 /* ========== LOGO ========== */
-.app-logo{background:#fff;border-radius:10px;padding:7px 11px;display:inline-flex;box-shadow:0 2px 10px rgba(0,0,0,.25)}
-.app-logo img{height:28px;display:block}
-.app-logo.sm{padding:5px 8px;border-radius:8px}
-.app-logo.sm img{height:22px}
+.app-logo{display:inline-flex;align-items:center;flex:0 0 auto}
+.app-logo img{height:34px;width:auto;display:block}
+.app-logo.sm img{height:32px}
 
 /* ========================================================
    ONBOARDING (layar penuh)
@@ -64,7 +63,7 @@ body{background:var(--bg);color:var(--fg);font-family:var(--fb);line-height:1.5;
   border:1px solid var(--line);border-radius:26px;padding:30px 24px;box-shadow:var(--shadow);
   text-align:center;animation:rise .5s cubic-bezier(.2,.7,.2,1) both}
 .ob-card .app-logo{margin-bottom:20px}
-.ob-card .app-logo img{height:38px}
+.ob-card .app-logo img{height:56px}
 .ob-card h1{font-family:var(--fh);font-weight:700;font-size:1.7rem;margin:0 0 6px;letter-spacing:-.5px}
 .accent{color:var(--red-bright)}
 .ob-card p{color:var(--muted);font-size:.9rem;margin:0 0 22px}
@@ -443,3 +442,13 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   .cal-legend{gap:12px;flex-wrap:wrap}
 }
 .makan-card .lab small{display:block;font-size:.72rem;color:var(--faint);margin-top:2px}
+
+/* logo Dahana transparan: putih di mode gelap, hitam di mode terang */
+.logo-l{display:none!important}
+@media (prefers-color-scheme:light){
+  :root:not([data-theme="dark"]) .logo-l{display:block!important}
+  :root:not([data-theme="dark"]) .logo-d{display:none!important}}
+:root[data-theme="light"] .logo-l{display:block!important}
+:root[data-theme="light"] .logo-d{display:none!important}
+.hari-badge{min-width:96px}
+.hari-badge .d{font-size:1.02rem}
