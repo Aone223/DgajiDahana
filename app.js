@@ -41,10 +41,12 @@ function periodNote(k){var p=k.split('-'),y=+p[0],m=+p[1]-1;var sm=m-1,sy=y;if(s
   return '21 '+BLN[sm]+' '+(sy!==y?sy+' ':'')+'– 20 '+BLN[m]+' '+y;}
 
 /* ========== INTI JAM KERJA ========== */
+/* pembulatan menit jam pulang: 0–16 -> :00 (ke bawah), 17–46 -> :30, 47–59 -> jam berikutnya */
+function bulatkan(m){var h=Math.floor(m/60),mm=m%60;if(mm<17)return h*60;if(mm<47)return h*60+30;return (h+1)*60;}
 function hitung(o){
-  var lewat=o.jamPulang!=null&&o.jamPulang>CUT;var atas50=lewat?true:o.atas50;
-  var base=0,lembur=0,bulat=o.jamPulang,kalc='',rM=0;
-  if(lewat){rM=Math.ceil((o.jamPulang-CUT)/30)*30;bulat=CUT+rM;}
+  var bulat=o.jamPulang!=null?bulatkan(o.jamPulang):null;
+  var lewat=bulat!=null&&bulat>CUT;var atas50=lewat?true:o.atas50;
+  var base=0,lembur=0,kalc='',rM=lewat?bulat-CUT:0;
   if(o.type==='minggu'){
     if(!lewat){base=atas50?25:21;kalc='Minggu · DTH '+(atas50?'di atas':'di bawah')+' 50 Ton';}
     else{base=25;lembur=rM/15;kalc='Minggu · lembur ×4 / 30 mnt';}
@@ -73,7 +75,9 @@ function renderEcho(){var raw=$('pulang').value,el=$('jamEcho'),m=parseJam(raw);
   if(!raw){el.textContent='';el.className='jam-echo';return;}
   if(m==null){el.className='jam-echo bad';el.textContent='Jam pulang tidak valid — minimal 08:00';return;}
   el.className='jam-echo';
-  if(m>CUT)el.innerHTML='Pukul <b>'+fmt(m)+'</b> · <span class="ov">lembur, dibulatkan '+fmt(Math.ceil((m-CUT)/30)*30+CUT)+'</span>';
+  var bl=bulatkan(m);
+  if(bl>CUT)el.innerHTML='Pukul <b>'+fmt(m)+'</b> · <span class="ov">lembur, dibulatkan '+fmt(bl)+'</span>';
+  else if(m>CUT)el.innerHTML='Pukul <b>'+fmt(m)+'</b> · dibulatkan 17:00, tidak lembur';
   else el.innerHTML='Pukul <b>'+fmt(m)+'</b>';}
 var lastTotal=null;
 function renderResult(){
@@ -132,6 +136,12 @@ function dedupe(){ // satu tanggal satu data (simpan yang terakhir diinput)
   var recs=getRecs(),seen={},out=[];
   for(var i=recs.length-1;i>=0;i--){if(!seen[recs[i].tanggal]){seen[recs[i].tanggal]=1;out.unshift(recs[i]);}}
   if(out.length!==recs.length)setRecs(out);}
+function recalcAll(){ // terapkan aturan pembulatan terbaru ke semua catatan yang sudah ada
+  var recs=getRecs(),ubah=false;
+  recs.forEach(function(r){if(r.off||r.jamPulang==null)return;
+    var h=hitung({type:r.type,atas50:r.atas50,jamPulang:r.jamPulang,pengambilan:r.pengambilan});
+    if(h.total!==r.total){r.total=h.total;ubah=true;}});
+  if(ubah)setRecs(recs);}
 function capType(t){return t==='biasa'?'Hari Biasa':t==='sabtu'?'Sabtu':'Minggu';}
 function tglPanjang(d){return new Date(d+'T00:00:00').toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});}
 function recBreakdown(r){
@@ -488,7 +498,7 @@ function initInstall(){
 (function(){
   var th=ls(function(){return localStorage.getItem(K_TH)},null);
   if(th)document.documentElement.setAttribute('data-theme',th);
-  dedupe();
+  dedupe();recalcAll();
   var t=todayStr();$('tanggal').value=t;
   curPeriod=periodKey(t);selDate=t;var dt=new Date(t+'T00:00:00');calY=dt.getFullYear();calM=dt.getMonth();
   bind();registerSW();initInstall();
