@@ -1,7 +1,7 @@
 /* Service worker DGaji — NETWORK-FIRST: selalu ambil versi terbaru,
    cache hanya dipakai saat offline. Ganti VERSI tiap update. */
-var VERSI='dgaji-v15';
-var ASSETS=['./','./index.html','./styles.css?v=15','./libur.js?v=15','./app.js?v=15','./logo-dark.png','./logo-light.png',
+var VERSI='dgaji-v16';
+var ASSETS=['./','./index.html','./styles.css?v=16','./libur.js?v=16','./app.js?v=16','./logo-dark.png','./logo-light.png',
   './icon-192.png','./icon-512.png','./manifest.json'];
 
 self.addEventListener('install',function(e){

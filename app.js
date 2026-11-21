@@ -33,6 +33,8 @@ function parseJam(raw){var d=String(raw).replace(/\D/g,'');if(!d)return null;
   if(h<8||h>23)return null;return h*60+m;}  /* minimal 08:00 */
 
 function dayType(s){if(!s)return 'biasa';var g=new Date(s+'T00:00:00').getDay();
+  var lb=(typeof liburOf==='function')?liburOf(s):null;
+  if(lb&&lb[0]==='n')return 'merah';   /* tanggal merah dihitung seperti hari Minggu */
   if(g===0)return 'minggu';if(g===6)return 'sabtu';return 'biasa';}
 function periodKey(dateStr){var d=new Date(dateStr+'T00:00:00');var y=d.getFullYear(),m=d.getMonth();
   if(d.getDate()>=21){m++;if(m>11){m=0;y++;}}return y+'-'+String(m+1).padStart(2,'0');}
@@ -47,9 +49,9 @@ function hitung(o){
   var bulat=o.jamPulang!=null?bulatkan(o.jamPulang):null;
   var lewat=bulat!=null&&bulat>CUT;var atas50=lewat?true:o.atas50;
   var base=0,lembur=0,kalc='',rM=lewat?bulat-CUT:0;
-  if(o.type==='minggu'){
-    if(!lewat){base=atas50?25:21;kalc='Minggu · DTH '+(atas50?'di atas':'di bawah')+' 50 Ton';}
-    else{base=25;lembur=rM/15;kalc='Minggu · lembur ×4 / 30 mnt';}
+  if(o.type==='minggu'||o.type==='merah'){var nm=o.type==='merah'?'Tanggal merah':'Minggu';
+    if(!lewat){base=atas50?25:21;kalc=nm+' · DTH '+(atas50?'di atas':'di bawah')+' 50 Ton';}
+    else{base=25;lembur=rM/15;kalc=nm+' · lembur ×4 / 30 mnt';}
   }else if(o.type==='sabtu'){
     if(!lewat){base=atas50?9.5:7.5;kalc='Sabtu · DTH '+(atas50?'di atas':'di bawah')+' 50 Ton';}
     else{base=9.5;lembur=rM/30;kalc='Sabtu · lembur ×2 / 30 mnt';}
@@ -142,11 +144,12 @@ function dedupe(){ // satu tanggal satu data (simpan yang terakhir diinput)
   if(out.length!==recs.length)setRecs(out);}
 function recalcAll(){ // terapkan aturan pembulatan terbaru ke semua catatan yang sudah ada
   var recs=getRecs(),ubah=false;
-  recs.forEach(function(r){if(r.off||r.jamPulang==null)return;
+  recs.forEach(function(r){var ty=dayType(r.tanggal);if(r.type!==ty){r.type=ty;ubah=true;}
+    if(r.off||r.jamPulang==null)return;
     var h=hitung({type:r.type,atas50:r.atas50,jamPulang:r.jamPulang,pengambilan:r.pengambilan});
     if(h.total!==r.total){r.total=h.total;ubah=true;}});
   if(ubah)setRecs(recs);}
-function capType(t){return t==='biasa'?'Hari Biasa':t==='sabtu'?'Sabtu':'Minggu';}
+function capType(t){return t==='biasa'?'Hari Biasa':t==='sabtu'?'Sabtu':t==='merah'?'Tanggal Merah':'Minggu';}
 function tglPanjang(d){return new Date(d+'T00:00:00').toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});}
 function recBreakdown(r){
   if(r.off)return '<div class="drow"><span>Status</span><b>OFF / Libur</b></div><div class="drow tot"><span>Total hari ini</span><b>0 jam</b></div>';
