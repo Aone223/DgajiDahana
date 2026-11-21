@@ -10,10 +10,10 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="DGaji">
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png?v=14">
-<link rel="icon" type="image/png" href="icon-192.png?v=14">
+<link rel="apple-touch-icon" href="icon-192.png?v=15">
+<link rel="icon" type="image/png" href="icon-192.png?v=15">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=14">
+<link rel="stylesheet" href="styles.css?v=15">
 </head>
 <body>
 
@@ -67,6 +67,7 @@
           </div>
           <div class="hari-badge" id="hariBadge"><span class="d" id="hariNama">—</span></div>
         </div>
+        <div class="libur-note" id="liburNote" hidden></div>
 
         <div id="formArea">
           <label class="check off-check">
@@ -154,7 +155,8 @@
         </div>
         <div class="cal-head"><span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span><span class="mg">Min</span></div>
         <div class="cal-grid" id="calGrid"></div>
-        <div class="cal-legend"><span><i class="lg kerja"></i>Kerja</span><span><i class="lg off"></i>OFF</span><span><i class="lg today"></i>Hari ini</span></div>
+        <div class="cal-legend"><span><i class="lg kerja"></i>Kerja</span><span><i class="lg off"></i>OFF</span><span><i class="lg merah"></i>Tanggal merah</span><span><i class="lg cuti"></i>Cuti bersama</span><span><i class="lg today"></i>Hari ini</span></div>
+        <div class="libur-list" id="liburList"></div>
       </div>
 
       <div class="card day-card" id="dayCard"></div>
@@ -216,6 +218,7 @@
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
-<script src="app.js?v=14"></script>
+<script src="libur.js?v=15"></script>
+<script src="app.js?v=15"></script>
 </body>
 </html>

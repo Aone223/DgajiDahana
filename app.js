@@ -70,7 +70,11 @@ function renderHari(){var t=$('tanggal').value,b=$('hariBadge');b.className='har
   if(!t){$('hariNama').textContent='—';return;}
   var g=new Date(t+'T00:00:00').getDay(),ty=dayType(t);
   $('hariNama').textContent=HARI[g];
-  if(ty!=='biasa')b.classList.add(ty);}
+  if(ty!=='biasa')b.classList.add(ty);
+  var lb=liburOf(t),n=$('liburNote');
+  if(lb){b.classList.add('merah');n.hidden=false;n.className='libur-note '+lb[0];
+    n.innerHTML='<b>'+(lb[0]==='n'?'Tanggal merah':'Cuti bersama')+'</b> · '+lb[1];}
+  else n.hidden=true;}
 function renderEcho(){var raw=$('pulang').value,el=$('jamEcho'),m=parseJam(raw);
   if(!raw){el.textContent='';el.className='jam-echo';return;}
   if(m==null){el.className='jam-echo bad';el.textContent='Jam pulang tidak valid — minimal 08:00';return;}
@@ -200,18 +204,22 @@ function renderCal(){
   for(var i=0;i<off;i++)html+='<span class="cd empty"></span>';
   for(var d=1;d<=days;d++){
     var k=ds(calY,calM,d),r=map[k],g=new Date(calY,calM,d).getDay();
-    var cls='cd'+(k===today?' today':'')+(k===selDate?' sel':'')+(g===0?' mg':'')+(r?(r.off?' has off':' has'):'');
+    var lb=liburOf(k);
+    var cls='cd'+(k===today?' today':'')+(k===selDate?' sel':'')+(g===0?' mg':'')+(lb?(lb[0]==='n'?' merah':' cuti'):'')+(r?(r.off?' has off':' has'):'');
     if(r&&!r.off){tot+=r.total;kerja++;}
     html+='<button class="'+cls+'" data-d="'+k+'"><span class="n">'+d+'</span>'+
       (r?'<span class="mk">'+(r.off?'OFF':jamNum(r.total))+'</span>':'')+'</button>';}
   var g=$('calGrid');g.innerHTML=html;g.classList.remove('slide');void g.offsetWidth;g.classList.add('slide');
   $('calSum').textContent=kerja+' hari kerja · '+jamNum(tot)+' jam';
+  renderLiburBulan();
   var pk=ds(calY,calM,15).slice(0,7);
   $('exportNote').innerHTML='Periode gaji <b>'+periodLabel(pk)+'</b> · '+periodNote(pk);
   renderDay();}
 function renderDay(){
   var c=$('dayCard'),r=recByDate(selDate);delArm=null;
-  var head='<div class="day-head"><div><div class="day-date">'+tglPanjang(selDate)+'</div>'+
+  var lb=liburOf(selDate);
+  var head=(lb?'<div class="libur-banner '+(lb[0]==='n'?'n':'c')+'"><b>'+(lb[0]==='n'?'Libur Nasional':'Cuti Bersama')+'</b>'+lb[1]+'</div>':'')+
+    '<div class="day-head"><div><div class="day-date">'+tglPanjang(selDate)+'</div>'+
     '<div class="day-sub">'+(r?(r.off?'Libur':'Sudah diinput'):'Belum ada data')+'</div></div>'+
     (r?'<div class="day-total'+(r.off?' off':'')+'">'+(r.off?'OFF':jamNum(r.total)+'<small> jam</small>')+'</div>':'')+'</div>';
   if(!r){c.innerHTML=head+'<div class="day-empty">Tidak ada catatan di tanggal ini.</div>'+
@@ -219,6 +227,14 @@ function renderDay(){
   else c.innerHTML=head+'<div class="day-body">'+recBreakdown(r)+'</div>'+
     '<div class="rec-act"><button id="dayEdit">✎ Edit</button><button class="del" id="dayDel">🗑 Hapus</button></div>';
   c.classList.remove('pop-in');void c.offsetWidth;c.classList.add('pop-in');}
+function renderLiburBulan(){
+  var el=$('liburList'),pre=calY+'-'+pad(calM+1)+'-',items=[];
+  Object.keys(LIBUR).sort().forEach(function(k){if(k.indexOf(pre)===0)items.push([k,LIBUR[k]]);});
+  if(!liburTersedia(calY)){el.innerHTML='<div class="ll-none">Daftar tanggal merah '+calY+' belum tersedia.</div>';return;}
+  if(!items.length){el.innerHTML='<div class="ll-none">Tidak ada tanggal merah bulan ini.</div>';return;}
+  el.innerHTML='<div class="ll-h">Tanggal merah bulan ini</div>'+items.map(function(it){
+    return '<button class="ll-row" data-d="'+it[0]+'"><span class="ll-d '+it[1][0]+'">'+(+it[0].slice(8))+'</span>'+
+      '<span class="ll-t">'+it[1][1]+'<small>'+(it[1][0]==='n'?'Libur Nasional':'Cuti Bersama')+' · '+HARI[new Date(it[0]+'T00:00:00').getDay()]+'</small></span></button>';}).join('');}
 function moveCal(n){calM+=n;if(calM<0){calM=11;calY--;}if(calM>11){calM=0;calY++;}
   var today=todayStr();
   selDate=(today.slice(0,7)===ds(calY,calM,1).slice(0,7))?today:ds(calY,calM,1);renderCal();}
@@ -278,7 +294,7 @@ function downloadExcel(){
     var p=rec.tanggal.split('-'),row=ws.getRow(r);
     var hr=HARI[new Date(rec.tanggal+'T00:00:00').getDay()];
     var vals=[i+1,new Date(Date.UTC(+p[0],+p[1]-1,+p[2])),hr,
-      rec.off?'OFF / Libur':'Kerja',
+      (rec.off?'OFF / Libur':'Kerja')+(liburOf(rec.tanggal)?' · '+(liburOf(rec.tanggal)[0]==='n'?'Tgl merah':'Cuti bersama'):''),
       rec.off?'-':(rec.atas50?'> 50 Ton':'≤ 50 Ton'),
       rec.off?'-':fmt(rec.jamPulang),
       rec.off?'-':(rec.pengambilan?'Ya':'Tidak'),
@@ -288,7 +304,7 @@ function downloadExcel(){
       cell.alignment={vertical:'middle',horizontal:(j===2||j===3)?'left':'center'};
       if(i%2===1)cell.fill=fill(ZEBRA);});
     row.getCell(2).numFmt='dd/mm/yyyy';row.getCell(8).numFmt=JAM;
-    if(hr==='Minggu')row.getCell(3).font={size:10,bold:true,color:{argb:RED}};
+    if(hr==='Minggu'||(liburOf(rec.tanggal)&&liburOf(rec.tanggal)[0]==='n'))row.getCell(3).font={size:10,bold:true,color:{argb:RED}};
     row.height=18;r++;});
   var last=r-1;
   ws.mergeCells('A'+r+':G'+r);
@@ -414,6 +430,8 @@ function bind(){
   // riwayat: kalender
   $('calPrev').addEventListener('click',function(){moveCal(-1);});
   $('calNext').addEventListener('click',function(){moveCal(1);});
+  $('liburList').addEventListener('click',function(e){var b=e.target.closest('.ll-row');if(!b)return;selDate=b.dataset.d;renderCal();
+    var dc=$('dayCard');if(dc.scrollIntoView)dc.scrollIntoView({behavior:'smooth',block:'nearest'});});
   $('calGrid').addEventListener('click',function(e){var b=e.target.closest('.cd[data-d]');if(!b)return;
     selDate=b.dataset.d;document.querySelectorAll('.cd.sel').forEach(function(x){x.classList.remove('sel')});
     b.classList.add('sel');renderDay();});
